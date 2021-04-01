@@ -464,12 +464,18 @@ Private Sub validate_parameters()
         txt_param1.ControlTipText = PARAM_NEEDED
     End If
     
-    If Not isNumericList(txt_param2.Text) Then
+    If (Not isNumericList(txt_param2.Text)) And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = NON_NUMERIC
-    ElseIf Trim(txt_param2.Text) = "" Then
+    ElseIf Trim(txt_param2.Text) = "" And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = PARAM_NEEDED
+    End If
+    
+    If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
+        If Not (Trim(txt_param2.Text) = "u" Or Trim(txt_param2.Text = "d")) Then
+            txt_param2.BackColor = RED
+        End If
     End If
     
     If Not isNumericList(txt_param3.Text) Then
