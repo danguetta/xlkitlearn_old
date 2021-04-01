@@ -17,7 +17,7 @@ Public Const AUTH_KEY = "eMSpn8v3Dc5GoQT7g76NDWfYGg4attWJKg6N3kHt1GdfN0iN321CluE
 
 Public Const MISSING = "XxXxXxXxXxXxX"
 
-Public Const MODELS = "{'Linear/logistic regression'|'Lasso penalty'`'Decision tree'|'Tree depth'`'Boosted decision tree'|'Tree depth,Max trees,Learning rate'`'Random forest'|'Tree depth,Number of trees'}"
+Public Const MODELS = "{'Linear/logistic regression'|'Lasso penalty'`'K-Nearest Neighbors'|'Neighbors, Weighting'`'Decision tree'|'Tree depth'`'Boosted decision tree'|'Tree depth,Max trees,Learning rate'`'Random forest'|'Tree depth,Number of trees'}"
 Public Const BLANK_SETTINGS = "{'model'|'Linear/logistic regression'`'formula'|''`'param1'|''`'param2'|''`'param3'|''`'training_data'|''`'K'|''`'ts_data'|'False'`'evaluation_perc'|''`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
 Public Const BLANK_TEXT_SETTINGS = "{'source_data'|''`'max_df'|''`'min_df'|''`'max_features'|'500'`'stop_words'|'True'`'tf_idf'|'False'`'lda_topics'|''`'seed'|'123'`'eval_perc'|'0'`'bigrams'|'False'`'stem'|'False'`'output_code'|'True'`'sparse_output'|'False'`'max_lda_iter'|''}"
 
@@ -104,6 +104,7 @@ Public Sub update_conf(Optional resolve_path As Boolean = False)
         
         .Range("A2") = "Interpreter_Mac"
         .Range("B2") = "$HOME/xlkitlearn/bin/python"
+    
     End With
     
     If resolve_path = True Then
