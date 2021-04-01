@@ -1999,9 +1999,15 @@ class AddinModel:
 
         elif model_name == NEAREST_NEIGHBORS:
             if binary_data:
-                self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                if params.is_distance == 1:
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                else:
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="uniform", p=2)
             else:
-                self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                if params.is_distance == 1:
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                else:
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="uniform", p=2)
 
         elif model_name == DECISION_TREE:
             if binary_data:
@@ -2051,9 +2057,15 @@ class AddinModel:
         elif model_name == NEAREST_NEIGHBORS:
             import_string = 'import sklearn.neighbors as sk_n'
             if binary_data:
-                model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
+                if params.is_distance == 1:
+                    model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
+                else:
+                    model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
             else:
-                model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
+                if params.is_distance == 1:
+                    model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
+                else:
+                    model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
                     
         elif model_name == DECISION_TREE:
             import_string = 'import sklearn.tree as sk_t'
@@ -3906,9 +3918,15 @@ class PredictiveCode:
                     # If we're here, the only kind of tuning we're doing is of the Lasso penalty
                     self._import_statements.append('import sklearn.neighbors as sk_n')
                     if self._binary:
-                        o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="distance", p=2)'           +'\n'
+                        if params.is_distance == 1:
+                            o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="distance", p=2)'               +'\n'
+                        else:
+                            o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="uniform", p=2)'                +'\n'
                     else:
-                        o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="distance", p=2)'                    +'\n'                   
+                        if params.is_distance == 1:
+                            o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="distance", p=2)'                +'\n'
+                        else:
+                            o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="uniform", p=2)'                 +'\n'                   
                 
                 else:
                     base_model = AddinModel._get_model_string(self._model_name,
