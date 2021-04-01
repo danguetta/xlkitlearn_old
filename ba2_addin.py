@@ -38,6 +38,7 @@ from scipy import sparse
 # Estimators, learners, etc...
 warnings.filterwarnings("ignore", category = DeprecationWarning)
 from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -139,7 +140,7 @@ def pad_string(string, size, sep):
     
     return  string + ' ' + (sep*(size-len(string))) + ' '
         
-        
+      
 class D(OrderedDict):
     '''
     This class extends the standard Python dictionary class in the following ways
@@ -309,6 +310,7 @@ TEXT_CONFIG = D( settings_cell = 'D14',
 MAX_LR_ITERS = 500
 
 LINEAR_REGRESSION = 'lr'
+NEAREST_NEIGHBORS = 'knn'
 DECISION_TREE = 'dt'
 BOOSTED_DT = 'bdt'
 RANDOM_FOREST = 'rf'
@@ -317,6 +319,11 @@ MODELS = D( {LINEAR_REGRESSION : D( english_key = 'Linear/logistic regression',
                                         params = D(param1 = D(english_key='Lasso penalty',
                                                               sklearn_name='alpha',
                                                               kind='f',
+                                                              list_default=0))),
+            NEAREST_NEIGHBORS : D( english_key = 'K-Nearest Neighbors',
+                                        params = D(param1 = D(english_key='Neighbors',
+                                                              sklearn_name='n_neighbors',
+                                                              kind='i',
                                                               list_default=0))),
             DECISION_TREE     : D( english_key = 'Decision tree',
                                         params = D(param1 = D(english_key='Tree depth',
@@ -924,7 +931,7 @@ class AddinErrorOutput(ExcelOutput):
 class AddinInstance:
 
     def __init__(self, excel_connector, out_err, config, udf_server):
-        
+
         self._out_err = out_err
         self._wb = excel_connector.wb
         self._model_sheet = excel_connector.wb.sheets(EXCEL_INTERFACE.interface_sheet)
@@ -1021,7 +1028,7 @@ class AddinInstance:
         
             # Split the settings string into constituent settings
             settings_string = settings_string.split(EXCEL_INTERFACE.settings_dict_comma)
-        
+
             # Convert the settings string into a dictionary
             settings_string = D({trim_edges(i.split(EXCEL_INTERFACE.settings_dict_colon)[0]).strip() :
                                     trim_edges(i.split(EXCEL_INTERFACE.settings_dict_colon)[1]).strip()
@@ -1208,8 +1215,9 @@ class PredictiveAddinInstance(AddinInstance):
         AddinInstance.__init__(self, excel_connector, out_err, PREDICTIVE_CONFIG, udf_server)
         
     def load_settings(self):
+
         self._read_settings_string()
-        
+
         self._out_err.finalize()
         
         # Model type
@@ -1756,7 +1764,7 @@ class Datasets:
                                         'text like N/A, or NA, to denote missing values. Make sure you remove '
                                         'any such rows when you clean your data before using '
                                         'XLKitLearn.', critical=True)
-        
+
         else:
             out = D(X=np.asarray(design_matrix[0]))
 
@@ -1984,7 +1992,13 @@ class AddinModel:
                     self._model = LinearRegression()
                 else:
                     self._model = Lasso(alpha=params.alpha, normalize=True)
-                
+
+        elif model_name == NEAREST_NEIGHBORS:
+            if binary_data:
+                self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance", p=2)
+            else:
+                self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance", p=2)
+
         elif model_name == DECISION_TREE:
             if binary_data:
                 self._model = DecisionTreeClassifier(max_depth=params.max_depth, random_state=seed)
@@ -2029,6 +2043,13 @@ class AddinModel:
                     model_string = 'sk_lm.LinearRegression()'
                 else:
                     model_string = f'sk_lm.Lasso(alpha={params.alpha}, normalize=True)'
+
+        elif model_name == NEAREST_NEIGHBORS:
+            import_string = 'import sklearn.neighbors as sk_n'
+            if binary_data:
+                model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
+            else:
+                model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
                     
         elif model_name == DECISION_TREE:
             import_string = 'import sklearn.tree as sk_t'
@@ -2271,7 +2292,7 @@ class AddinModel:
             out.add_blank_row()
     
     def print_var_importance(self, columns, n=10, out=None):
-        if self._model_name != LINEAR_REGRESSION:
+        if self._model_name != LINEAR_REGRESSION and self._model_name != NEAREST_NEIGHBORS:
             if len(columns) <= EXCEL_INTERFACE.variable_importance_limit:
                 # Create a scorer
                 scorer = make_scorer(self._eval_func, greater_is_better=True, needs_proba=self._binary_data)
@@ -3630,7 +3651,7 @@ class PredictiveCode:
                 patsy_translator +='        output_data["prediction_data"] = ('                                        +'\n'
                 patsy_translator +='            {"X" : remove_intercept(pt.build_design_matrices([p[1].design_info],'  +'\n'
                 patsy_translator +='                                            datasets["prediction_data"],'          +'\n'
-                patsy_translator +='                                            NA_action="raise")[0])})'+'\n'
+                patsy_translator +='                                            NA_action="raise")[0])})'              +'\n'
                 patsy_translator +='    '                                                                              +'\n'
                 patsy_translator +='    # Keep track of whether we need an intercept'                                  +'\n'
                 patsy_translator +='    cols = p[1].design_info.column_names'                                          +'\n'
@@ -3876,7 +3897,15 @@ class PredictiveCode:
                     o +=           'if not datasets["intercept"]:'                                                     +'\n'
                     o +=           '    base_estimator.fit_intercept = False'                                          +'\n'
                     o +=           ''                                                                                  +'\n'
-                                        
+                
+                elif self._model_name == NEAREST_NEIGHBORS:
+                    # If we're here, the only kind of tuning we're doing is of the Lasso penalty
+                    self._import_statements.append('import sklearn.neighbors as sk_n')
+                    if self._binary:
+                        o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="distance", p=2)'           +'\n'
+                    else:
+                        o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="distance", p=2)'                    +'\n'                   
+                
                 else:
                     base_model = AddinModel._get_model_string(self._model_name,
                                                                 D({i:self._params[i].vals[0]
