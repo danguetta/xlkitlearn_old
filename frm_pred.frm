@@ -48,7 +48,20 @@ Private Sub cmd_save_Click()
     dict_utils CURRENT_SETTINGS, "output_code", chk_output_code.Value
     
     dict_utils CURRENT_SETTINGS, "param1", txt_param1.Text
-    dict_utils CURRENT_SETTINGS, "param2", txt_param2.Text
+    
+    Dim bool_weight As Integer
+    bool_weight = 0
+    If cmb_model.Value = "K-Nearest Neighbors" Then
+        If txt_param2.Text = "d" Then
+            bool_weight = 1
+        End If
+        dict_utils CURRENT_SETTINGS, "param2", bool_weight
+    End If
+    
+    If cmb_model.Value <> "K-Nearest Neighbors" Then
+        dict_utils CURRENT_SETTINGS, "param2", txt_param2.Text
+    End If
+    
     dict_utils CURRENT_SETTINGS, "param3", txt_param3.Text
     
     dict_utils CURRENT_SETTINGS, "training_data", lbl_training_data.tag
@@ -266,6 +279,13 @@ Private Sub UserForm_Initialize()
     
     txt_param1.Text = dict_utils(CURRENT_SETTINGS, "param1")
     txt_param2.Text = dict_utils(CURRENT_SETTINGS, "param2")
+    If cmb_model.Value = "K-Nearest Neighbors" Then
+        If txt_param2.Text = "0" Or txt_param2.Text = "" Then
+            txt_param2.Text = "u"
+        ElseIf txt_param2.Text = "1" Then
+            txt_param2.Text = "d"
+        End If
+    End If
     txt_param3.Text = dict_utils(CURRENT_SETTINGS, "param3")
     
     clear_vars
@@ -429,6 +449,7 @@ Private Sub validate_parameters()
     Const NON_NUMERIC = "This parameter needs to be a number; please correct."
     Const PARAM_NEEDED = "This parameter cannot be empty."
     Const DATA_NEEDED = "Training data is needed."
+    Const KNN_INVALID = "This parameter must either be 'u' or 'd'."
     
     ' Clear all the entries
     txt_formula.BackColor = WHITE
@@ -475,6 +496,7 @@ Private Sub validate_parameters()
     If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
         If Not (Trim(txt_param2.Text) = "u" Or Trim(txt_param2.Text = "d")) Then
             txt_param2.BackColor = RED
+            txt_param2.ControlTipText = KNN_INVALID
         End If
     End If
     
