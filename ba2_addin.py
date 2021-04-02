@@ -327,7 +327,7 @@ MODELS = D( {LINEAR_REGRESSION : D( english_key = 'Linear/logistic regression',
                                                               list_default=0),
                                                    param2 = D(english_key='Weighting',
                                                               sklearn_name='is_distance',
-                                                              kind='b',
+                                                              kind='i',
                                                               list_default='0'))),
             DECISION_TREE     : D( english_key = 'Decision tree',
                                         params = D(param1 = D(english_key='Tree depth',
@@ -3915,15 +3915,14 @@ class PredictiveCode:
                     o +=           ''                                                                                  +'\n'
                 
                 elif self._model_name == NEAREST_NEIGHBORS:
-                    # If we're here, the only kind of tuning we're doing is of the Lasso penalty
                     self._import_statements.append('import sklearn.neighbors as sk_n')
                     if self._binary:
-                        if params.is_distance == 1:
+                        if self._params.is_distance.vals[0] == 1:
                             o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="distance", p=2)'               +'\n'
                         else:
                             o +=   'base_estimator = sk_n.KNeighborsClassifier(weights="uniform", p=2)'                +'\n'
                     else:
-                        if params.is_distance == 1:
+                        if self._params.is_distance.vals[0] == 1:
                             o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="distance", p=2)'                +'\n'
                         else:
                             o +=   'base_estimator = sk_n.KNeighborsRegressor(weights="uniform", p=2)'                 +'\n'                   
