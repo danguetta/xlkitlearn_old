@@ -2060,15 +2060,9 @@ class AddinModel:
         elif model_name == NEAREST_NEIGHBORS:
             import_string = 'import sklearn.neighbors as sk_n'
             if binary_data:
-                if params.weights == "d" or params.weights == "distance":
-                    model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
-                else:
-                    model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsClassifier', params, ['n_neighbors', 'weights'], None, knn_exp = 2)
             else:
-                if params.weights == "d" or params.weights == "distance":
-                    model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
-                else:
-                    model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsRegressor', params, ['n_neighbors', 'weights'], None, knn_exp = 2)
                     
         elif model_name == DECISION_TREE:
             import_string = 'import sklearn.tree as sk_t'
@@ -2101,13 +2095,21 @@ class AddinModel:
         return D({'import_string':import_string, 'model_string':model_string})
     
     @staticmethod
-    def _make_model_string(f_name, params, potential_params, seed):
+    def _make_model_string(f_name, params, potential_params, seed, **kwargs):
         existing_params = []
         for p in potential_params:
             if p in params:
+              if p == 'weights':
+                if params[p] == 'u' or params[p] == 'uniform': 
+                  existing_params.append(f'{p}="uniform"')
+                if params[p] == 'd' or params[p] == 'distance': 
+                  existing_params.append(f'{p}="distance"')
+              else: 
                 existing_params.append(f'{p}={params[p]}')
         
         if seed is not None: existing_params.append(f'random_state={seed}')
+        
+        if kwargs['knn_exp']: existing_params.append(f'p={kwargs["knn_exp"]}')
         
         return f_name + '(' + ', '.join(existing_params) + ')'
     
