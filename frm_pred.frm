@@ -429,6 +429,7 @@ Private Sub validate_parameters()
     Const NON_NUMERIC = "This parameter needs to be a number; please correct."
     Const PARAM_NEEDED = "This parameter cannot be empty."
     Const DATA_NEEDED = "Training data is needed."
+    Const KNN_INVALID = "This parameter must either be 'u', 'd', 'uniform', or 'distance'."
     
     ' Clear all the entries
     txt_formula.BackColor = WHITE
@@ -464,12 +465,19 @@ Private Sub validate_parameters()
         txt_param1.ControlTipText = PARAM_NEEDED
     End If
     
-    If Not isNumericList(txt_param2.Text) Then
+    If (Not isNumericList(txt_param2.Text)) And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = NON_NUMERIC
-    ElseIf Trim(txt_param2.Text) = "" Then
+    ElseIf Trim(txt_param2.Text) = "" And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = PARAM_NEEDED
+    End If
+    
+    If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
+        If Not (Trim(txt_param2.Text) = "u" Or Trim(txt_param2.Text) = "d" Or Trim(txt_param2.Text) = "uniform" Or Trim(txt_param2.Text) = "distance") Then
+            txt_param2.BackColor = RED
+            txt_param2.ControlTipText = KNN_INVALID
+        End If
     End If
     
     If Not isNumericList(txt_param3.Text) Then
