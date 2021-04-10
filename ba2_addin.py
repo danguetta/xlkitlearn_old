@@ -1068,6 +1068,10 @@ class AddinInstance:
             english_key = 'boolean (True or False value)'
             validations  = [lambda x : x in ['True', 'False']]
             translator   = lambda x : {'True':True, 'False':False}[x]
+        elif spec.kind == 's':
+            english_key = 'string'
+            validations = [lambda x : x.find('XL') == -1]
+            translator = lambda x : x
         elif spec.kind == 'r':
             english_key = 'Range in an Excel spreadsheet'
             validations  = []
@@ -1998,12 +2002,12 @@ class AddinModel:
                 
         elif model_name == NEAREST_NEIGHBORS:
             if binary_data:
-                if params.is_distance == 1:
+                if params.weights == "d" or params.weights == "distance":
                     self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance", p=2)
                 else:
                     self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="uniform", p=2)
             else:
-                if params.is_distance == 1:
+                if params.weights == "d" or params.weights == "distance":
                     self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance", p=2)
                 else:
                     self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="uniform", p=2)
@@ -2056,12 +2060,12 @@ class AddinModel:
         elif model_name == NEAREST_NEIGHBORS:
             import_string = 'import sklearn.neighbors as sk_n'
             if binary_data:
-                if params.weights == "d" or "distance":
+                if params.weights == "d" or params.weights == "distance":
                     model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
                 else:
                     model_string = f'sk_n.KNeighborsClassifier(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
             else:
-                if params.weights == "d" or "distance":
+                if params.weights == "d" or params.weights == "distance":
                     model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="distance", p=2)'
                 else:
                     model_string = f'sk_n.KNeighborsRegressor(n_neighbors={params.n_neighbors}, weights="uniform", p=2)'
