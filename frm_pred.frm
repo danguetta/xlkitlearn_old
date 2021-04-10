@@ -340,6 +340,23 @@ Public Function isNumericList(list_string As String) As Boolean
     isNumericList = True
 End Function
 
+Public Function isWeightList(list_string As String) As Boolean
+    Dim i As Integer
+    Dim split_list As Variant
+    
+    split_list = Split(list_string, "&")
+    
+    For i = 0 To UBound(split_list)
+        If Not (Trim(split_list(i)) = "u" Or Trim(split_list(i)) = "d" Or Trim(split_list(i)) = "uniform" Or Trim(split_list(i)) = "distance") Then
+            isWeightList = False
+            Exit Function
+        End If
+    Next i
+    
+    isWeightList = True
+
+End Function
+
 Public Sub clear_vars()
     While vars.Count > 0
         vars.Remove (1)
@@ -474,7 +491,7 @@ Private Sub validate_parameters()
     End If
     
     If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
-        If Not (Trim(txt_param2.Text) = "u" Or Trim(txt_param2.Text) = "d" Or Trim(txt_param2.Text) = "uniform" Or Trim(txt_param2.Text) = "distance") Then
+        If Not (isWeightList(txt_param2.Text)) Then
             txt_param2.BackColor = RED
             txt_param2.ControlTipText = KNN_INVALID
         End If
