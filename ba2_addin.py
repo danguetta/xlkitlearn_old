@@ -1070,7 +1070,7 @@ class AddinInstance:
             translator   = lambda x : {'True':True, 'False':False}[x]
         elif spec.kind == 's':
             english_key = 'string'
-            validations = [lambda x : x.find('XL') == -1]
+            validations = []
             translator = lambda x : x
         elif spec.kind == 'r':
             english_key = 'Range in an Excel spreadsheet'
@@ -2003,14 +2003,14 @@ class AddinModel:
         elif model_name == NEAREST_NEIGHBORS:
             if binary_data:
                 if params.weights == "d" or params.weights == "distance":
-                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance")
                 else:
-                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="uniform", p=2)
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="uniform")
             else:
                 if params.weights == "d" or params.weights == "distance":
-                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance", p=2)
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance")
                 else:
-                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="uniform", p=2)
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="uniform")
 
         elif model_name == DECISION_TREE:
             if binary_data:
@@ -2060,9 +2060,9 @@ class AddinModel:
         elif model_name == NEAREST_NEIGHBORS:
             import_string = 'import sklearn.neighbors as sk_n'
             if binary_data:
-                model_string = AddinModel._make_model_string('sk_n.KNeighborsClassifier', params, ['n_neighbors', 'weights'], None, knn_exp = 2)
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsClassifier', params, ['n_neighbors', 'weights'], None)
             else:
-                model_string = AddinModel._make_model_string('sk_n.KNeighborsRegressor', params, ['n_neighbors', 'weights'], None, knn_exp = 2)
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsRegressor', params, ['n_neighbors', 'weights'], None)
                     
         elif model_name == DECISION_TREE:
             import_string = 'import sklearn.tree as sk_t'
@@ -2095,7 +2095,7 @@ class AddinModel:
         return D({'import_string':import_string, 'model_string':model_string})
     
     @staticmethod
-    def _make_model_string(f_name, params, potential_params, seed, **kwargs):
+    def _make_model_string(f_name, params, potential_params, seed):
         existing_params = []
         for p in potential_params:
             if p in params:
@@ -2108,8 +2108,6 @@ class AddinModel:
                 existing_params.append(f'{p}={params[p]}')
         
         if seed is not None: existing_params.append(f'random_state={seed}')
-        
-        if kwargs['knn_exp']: existing_params.append(f'p={kwargs["knn_exp"]}')
         
         return f_name + '(' + ', '.join(existing_params) + ')'
     
