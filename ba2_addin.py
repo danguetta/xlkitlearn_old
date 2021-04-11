@@ -1079,8 +1079,7 @@ class AddinInstance:
                       return 'uniform'
                     elif x == 'd' or x == 'distance':
                       return 'distance'
-                else:
-                  return x
+                return x
            
         elif spec.kind == 'r':
             english_key = 'Range in an Excel spreadsheet'
