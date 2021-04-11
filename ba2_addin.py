@@ -38,6 +38,7 @@ from scipy import sparse
 # Estimators, learners, etc...
 warnings.filterwarnings("ignore", category = DeprecationWarning)
 from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -309,6 +310,7 @@ TEXT_CONFIG = D( settings_cell = 'D14',
 MAX_LR_ITERS = 500
 
 LINEAR_REGRESSION = 'lr'
+NEAREST_NEIGHBORS = 'knn'
 DECISION_TREE = 'dt'
 BOOSTED_DT = 'bdt'
 RANDOM_FOREST = 'rf'
@@ -318,6 +320,15 @@ MODELS = D( {LINEAR_REGRESSION : D( english_key = 'Linear/logistic regression',
                                                               sklearn_name='alpha',
                                                               kind='f',
                                                               list_default=0))),
+            NEAREST_NEIGHBORS : D( english_key = 'K-Nearest Neighbors',
+                                        params = D(param1 = D(english_key='Neighbors',
+                                                              sklearn_name='n_neighbors',
+                                                              kind='i',
+                                                              list_default=0),
+                                                   param2 = D(english_key='Weighting',
+                                                              sklearn_name='weights',
+                                                              kind='s',
+                                                              list_default="uniform"))),
             DECISION_TREE     : D( english_key = 'Decision tree',
                                         params = D(param1 = D(english_key='Tree depth',
                                                               sklearn_name='max_depth',
@@ -1057,6 +1068,19 @@ class AddinInstance:
             english_key = 'boolean (True or False value)'
             validations  = [lambda x : x in ['True', 'False']]
             translator   = lambda x : {'True':True, 'False':False}[x]
+        elif spec.kind == 's':
+            english_key = 'string'
+            validations = []
+           
+            def translator(x):
+                if 'sklearn_name' in spec:
+                  if spec.sklearn_name == 'weights':
+                    if x == 'u' or x == 'uniform':
+                      return 'uniform'
+                    elif x == 'd' or x == 'distance':
+                      return 'distance'
+                return x
+           
         elif spec.kind == 'r':
             english_key = 'Range in an Excel spreadsheet'
             validations  = []
@@ -1985,6 +2009,18 @@ class AddinModel:
                 else:
                     self._model = Lasso(alpha=params.alpha, normalize=True)
                 
+        elif model_name == NEAREST_NEIGHBORS:
+            if binary_data:
+                if params.weights == "d" or params.weights == "distance":
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="distance")
+                else:
+                    self._model = KNeighborsClassifier(n_neighbors=params.n_neighbors, weights="uniform")
+            else:
+                if params.weights == "d" or params.weights == "distance":
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="distance")
+                else:
+                    self._model = KNeighborsRegressor(n_neighbors=params.n_neighbors, weights="uniform")
+
         elif model_name == DECISION_TREE:
             if binary_data:
                 self._model = DecisionTreeClassifier(max_depth=params.max_depth, random_state=seed)
@@ -2029,6 +2065,13 @@ class AddinModel:
                     model_string = 'sk_lm.LinearRegression()'
                 else:
                     model_string = f'sk_lm.Lasso(alpha={params.alpha}, normalize=True)'
+
+        elif model_name == NEAREST_NEIGHBORS:
+            import_string = 'import sklearn.neighbors as sk_n'
+            if binary_data:
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsClassifier', params, ['n_neighbors', 'weights'], None)
+            else:
+                model_string = AddinModel._make_model_string('sk_n.KNeighborsRegressor', params, ['n_neighbors', 'weights'], None)
                     
         elif model_name == DECISION_TREE:
             import_string = 'import sklearn.tree as sk_t'
@@ -2065,6 +2108,9 @@ class AddinModel:
         existing_params = []
         for p in potential_params:
             if p in params:
+              if isinstance(params[p], str):
+                existing_params.append(f'{p}=\"{params[p]}\"')
+              else: 
                 existing_params.append(f'{p}={params[p]}')
         
         if seed is not None: existing_params.append(f'random_state={seed}')

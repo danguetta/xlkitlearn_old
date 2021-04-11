@@ -340,6 +340,23 @@ Public Function isNumericList(list_string As String) As Boolean
     isNumericList = True
 End Function
 
+Public Function isWeightList(list_string As String) As Boolean
+    Dim i As Integer
+    Dim split_list As Variant
+    
+    split_list = Split(list_string, "&")
+    
+    For i = 0 To UBound(split_list)
+        If Not (Trim(split_list(i)) = "u" Or Trim(split_list(i)) = "d" Or Trim(split_list(i)) = "uniform" Or Trim(split_list(i)) = "distance") Then
+            isWeightList = False
+            Exit Function
+        End If
+    Next i
+    
+    isWeightList = True
+
+End Function
+
 Public Sub clear_vars()
     While vars.Count > 0
         vars.Remove (1)
@@ -429,6 +446,7 @@ Private Sub validate_parameters()
     Const NON_NUMERIC = "This parameter needs to be a number; please correct."
     Const PARAM_NEEDED = "This parameter cannot be empty."
     Const DATA_NEEDED = "Training data is needed."
+    Const KNN_INVALID = "This parameter must either be 'u', 'd', 'uniform', or 'distance'."
     
     ' Clear all the entries
     txt_formula.BackColor = WHITE
@@ -464,12 +482,19 @@ Private Sub validate_parameters()
         txt_param1.ControlTipText = PARAM_NEEDED
     End If
     
-    If Not isNumericList(txt_param2.Text) Then
+    If (Not isNumericList(txt_param2.Text)) And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = NON_NUMERIC
-    ElseIf Trim(txt_param2.Text) = "" Then
+    ElseIf Trim(txt_param2.Text) = "" And cmb_model.Value <> "K-Nearest Neighbors" Then
         txt_param2.BackColor = RED
         txt_param2.ControlTipText = PARAM_NEEDED
+    End If
+    
+    If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
+        If Not (isWeightList(txt_param2.Text)) Then
+            txt_param2.BackColor = RED
+            txt_param2.ControlTipText = KNN_INVALID
+        End If
     End If
     
     If Not isNumericList(txt_param3.Text) Then
