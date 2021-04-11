@@ -1071,7 +1071,17 @@ class AddinInstance:
         elif spec.kind == 's':
             english_key = 'string'
             validations = []
-            translator = lambda x : x
+           
+            def translator(x):
+                if 'sklearn_name' in spec:
+                  if spec.sklearn_name == 'weights':
+                    if x == 'u' or x == 'uniform':
+                      return 'uniform'
+                    elif x == 'd' or x == 'distance':
+                      return 'distance'
+                else:
+                  return x
+           
         elif spec.kind == 'r':
             english_key = 'Range in an Excel spreadsheet'
             validations  = []
@@ -2099,11 +2109,8 @@ class AddinModel:
         existing_params = []
         for p in potential_params:
             if p in params:
-              if p == 'weights':
-                if params[p] == 'u' or params[p] == 'uniform': 
-                  existing_params.append(f'{p}="uniform"')
-                if params[p] == 'd' or params[p] == 'distance': 
-                  existing_params.append(f'{p}="distance"')
+              if isinstance(params[p], str):
+                existing_params.append(f'{p}=\"{params[p]}\"')
               else: 
                 existing_params.append(f'{p}={params[p]}')
         
