@@ -3,12 +3,16 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.18                 #
+#  Version 10.19                 #
 ##################################
 
 # =====================
 # =   Load Packages   =
 # =====================
+
+# Interaction with Excel
+import xlwings as xw
+
 import pdb
 # Basic packages
 import pandas as pd
@@ -23,9 +27,6 @@ import signal
 from collections import OrderedDict
 import traceback
 import sys
-
-# Interaction with Excel
-import xlwings as xw
 
 # Data preparation utilities
 import patsy as pt
@@ -3600,17 +3601,17 @@ class PredictiveCode:
                 dot_translato  +=  '    x_cols = [i for i in datasets["training_data"].columns if i != y_col]'         +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    output_data["training_data"] = ('                                              +'\n'
-                dot_translato  +=  '                {"y" : datasets["training_data"][y_col].transpose(),'              +'\n'
-                dot_translato  +=  '                 "X" : datasets["training_data"][x_cols]})'                        +'\n'
+                dot_translato  +=  '                {"y" : np.array(datasets["training_data"][y_col].transpose()),'    +'\n'
+                dot_translato  +=  '                 "X" : np.array(datasets["training_data"][x_cols])})'              +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "evaluation_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["evaluation_data"] = ('                                        +'\n'
-                dot_translato  +=  '                {"y" : datasets["evaluation_data"][y_col].transpose(),'            +'\n'
-                dot_translato  +=  '                 "X" : datasets["evaluation_data"][x_cols]})'                      +'\n'
+                dot_translato  +=  '                {"y" : np.array(datasets["evaluation_data"][y_col].transpose()),'  +'\n'
+                dot_translato  +=  '                 "X" : np.array(datasets["evaluation_data"][x_cols])})'            +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "prediction_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["prediction_data"] = ('                                        +'\n'
-                dot_translato  +=  '                {"X" : datasets["prediction_data"][x_cols]})'                      +'\n'
+                dot_translato  +=  '                {"X" : np.array(datasets["prediction_data"][x_cols])})'            +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    # If the formula is y ~ . -1, we do not want an intercept, otherwise we do'    +'\n'
                 dot_translato  +=  '    output_data["intercept"] = (formula[-2:] != "-1")'                             +'\n'
