@@ -1,0 +1,17 @@
+To go from prod to dev
+----------------------
+   - Change the file name to include the word DEBUG in uppercase
+
+To go from dev to prod
+----------------------
+   - Remove DEBUG from the file name
+   - Run prepare_for_prod to reset all the settings and remove all sheets other than code_text, add-in, conf, and boston_housing
+   - Run update_server_version to update the version on the server
+
+To load a new version of the code
+---------------------------------
+   - Ensure a file called xlkitlearn.py is in the same directory, and run load_code
+
+To upgrade to a new version of xlwings
+--------------------------------------
+   - Make sure show_error in xlwings logs to the server

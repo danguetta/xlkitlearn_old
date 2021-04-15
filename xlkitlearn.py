@@ -986,8 +986,9 @@ class AddinInstance:
                 self._v_message += req_res['custom_message']
             
             if 'latest_version' in req_res:
+                latest_version = req_res['latest_version']
                 try:
-                    float_latest_version = float(req_res['latest_version'])
+                    float_latest_version = float(latest_version)
                     float_v_number = float(v_number)
                 except:
                     # If error, give the warning
