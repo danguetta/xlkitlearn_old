@@ -986,18 +986,28 @@ class AddinInstance:
                 self._v_message += req_res['custom_message']
             
             if 'latest_version' in req_res:
-                latest_version = req_res['latest_version']
-                if v_number != latest_version:
+                try:
+                    float_latest_version = float(req_res['latest_version'])
+                    float_v_number = float(v_number)
+                except:
+                    # If error, give the warning
+                    float_latest_version = 1
+                    float_v_number = 0
+            
+                if float_v_number < float_latest_version:
                     self._v_message += 'You are not using the latest version of XLKitLearn. Please download the '
                     self._v_message += f'latest version at guetta.org/xlkitlearn_latest. The latest version is {latest_version}, '
                     
-                    if v_number.split('.')[0] == latest_version.split('.')[0]:
-                        self._v_message += 'and it will only require-you to re-download this XLKitLearn.xlsm file - '
-                        self._v_message += 'no need to re-do the first lengthy installation step.'
-                    else:
-                        self._v_message += 'and the version of Python XLKitLearn uses has changed, so you\'ll need to '
-                        self._v_message += 're-do the installation process from the start. Promise the new features '
-                        self._v_message += 'will be worth it!'
+                    try:
+                        if v_number.split('.')[0] == latest_version.split('.')[0]:
+                            self._v_message += 'and it will only require-you to re-download this XLKitLearn.xlsm file - '
+                            self._v_message += 'no need to re-do the first lengthy installation step.'
+                        else:
+                            self._v_message += 'and the version of Python XLKitLearn uses has changed, so you\'ll need to '
+                            self._v_message += 're-do the installation process from the start. Promise the new features '
+                            self._v_message += 'will be worth it!'
+                    except:
+                        pass
                     
         except:
             pass
