@@ -452,7 +452,6 @@ Private Sub validate_parameters()
     Const UNSUPPORTED_HEADER = "Headers must be valid python variables. They can not be a python keyword," & _
                                                         " 'intercept', or begin with a number."
     Const DUPLICATE_HEADER = "Headers must only appear once in the dataset."
-    Const UNSUPPORTED_FILE_FORMAT = "File must be either .xls, .xlsx, or .csv."
     Const BS_GT1_FORMULA = "Best-subset selection can only be done with one formula."
     Const BS_GT10_VARS = "Best-subset selection with more than 10 variables would result in over 1000 competing models." & _
                                             " Consider using something more robust than XLKitLearn."
@@ -577,13 +576,8 @@ Private Sub validate_parameters()
         lbl_training_data.BackColor = RED
         lbl_training_data.ControlTipText = DATA_NEEDED
     ElseIf Left(lbl_training_data.tag, 5) = "File:" Then
-        Dim file_name As String
-        file_name = Split(lbl_training_data.tag, ": ")(1)
-        If Right(file_name, 4) <> ".xls" Or Right(file_name, 5) <> ".xlsx" Or Right(file_name, 4) <> ".csv" Then
-            lbl_training_data.BackColor = RED
-            lbl_training_data.ControlTipText = UNSUPPORTED_FILE_FORMAT
-        End If
-    ElseIf lbl_training_data.tag <> "" Then
+        ' Don't try to check data if in another file
+    Else
         Dim i As Integer
         For i = 1 To vars.count
             If vars(i) = "" Then

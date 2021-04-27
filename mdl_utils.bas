@@ -218,6 +218,9 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
                                         Right(dialogue_output, 5) = ".xlsx") Then
             get_range = "File: " & dialogue_output
             Exit Function
+        Else
+            MsgBox "Please enter a supported file type. .xls, .xlsx, or .csv only."
+            Exit Function
         End If
         
         ' Check whether it's contiguous by checking whether there is a comma
