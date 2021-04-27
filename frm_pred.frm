@@ -358,7 +358,7 @@ Public Function isWeightList(list_string As String) As Boolean
 End Function
 
 Public Sub clear_vars()
-    While vars.Count > 0
+    While vars.count > 0
         vars.Remove (1)
     Wend
 End Sub
@@ -426,8 +426,8 @@ Public Sub update_vars()
     
     If data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE" Then
         ' We have a sparse dataset - column names are blank
-    ElseIf data_range.Columns.Count < 50 Then
-        For i = 1 To data_range.Columns.Count
+    ElseIf data_range.Columns.count < 50 Then
+        For i = 1 To data_range.Columns.count
             vars.Add Trim(data_range(1, i))
         Next i
         
@@ -447,6 +447,22 @@ Private Sub validate_parameters()
     Const PARAM_NEEDED = "This parameter cannot be empty."
     Const DATA_NEEDED = "Training data is needed."
     Const KNN_INVALID = "This parameter must either be 'u', 'd', 'uniform', or 'distance'."
+    Const PERC_OUT_OF_RANGE = "This parameter is a percentage and must be between 0 and 100."
+    Const BLANK_HEADER = "Headers can not be blank."
+    Const UNSUPPORTED_HEADER = "Headers must be valid python variables. They can not be a python keyword," & _
+                                                        " 'intercept', or begin with a number."
+    Const DUPLICATE_HEADER = "Headers must only appear once in the dataset."
+    Const UNSUPPORTED_FILE_FORMAT = "File must be either .xls, .xlsx, or .csv."
+    Const BS_GT1_FORMULA = "Best-subset selection can only be done with one formula."
+    Const BS_GT10_VARS = "Best-subset selection with more than 10 variables would result in over 1000 competing models." & _
+                                            " Consider using something more robust than XLKitLearn."
+    Const BS_WITH_INTERCEPT = "XLKitLearn doesn't support best-subset selection with an intercept suppressing term."
+                                            
+    Dim UNSUPPORTED_HEADERS As Variant
+    UNSUPPORTED_HEADERS = Array("intercept", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", _
+                                            "else", "except", "false", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", _
+                                            "none", "nonlocal", "not", "or", "pass", "raise", "return", "true", "try", "while", "with", "yield")
+    
     
     ' Clear all the entries
     txt_formula.BackColor = WHITE
@@ -474,6 +490,27 @@ Private Sub validate_parameters()
     ' Check for numeric entries
     If (cmb_model.Value = "Linear/logistic regression") And (LCase(txt_param1.Text) = "bs") Then
         'We're doing best subset selection, we're good
+        If InStr(Trim(txt_formula.Text), "&") <> 0 Then
+            txt_formula.BackColor = RED
+            txt_formula.ControlTipText = BS_GT1_FORMULA
+        ElseIf InStr(Trim(txt_formula.Text), "-1") <> 0 Then
+            txt_formula.BackColor = RED
+            txt_formula.ControlTipText = BS_WITH_INTERCEPT
+        Else
+            If InStr(Trim(txt_formula.Text), ".") = 0 Then
+                Dim count As Integer
+                count = Len(Trim(txt_formula.Text)) - Len(Replace(Trim(txt_formula.Text), "+", ""))
+                If count >= 10 Then
+                    txt_formula.BackColor = RED
+                    txt_formula.ControlTipText = BS_GT10_VARS
+                End If
+            Else
+                If vars.count >= 10 Then
+                    txt_formula.BackColor = RED
+                    txt_formula.ControlTipText = BS_GT10_VARS
+                End If
+            End If
+        End If
     ElseIf (Not isNumericList(txt_param1.Text)) Then
         txt_param1.BackColor = RED
         txt_param1.ControlTipText = NON_NUMERIC
@@ -522,6 +559,9 @@ Private Sub validate_parameters()
     If Not IsNumeric(txt_evaluation_perc.Text) And Trim(txt_evaluation_perc.Text) <> "" Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = NON_NUMERIC
+    ElseIf Trim(txt_evaluation_perc.Text) < 0 Or Trim(txt_evaluation_perc.Text) > 100 Then
+        txt_evaluation_perc.BackColor = RED
+        txt_evaluation_perc.ControlTipText = PERC_OUT_OF_RANGE
     ElseIf Trim(txt_evaluation_perc.Text) = "" And opt_perc_eval.Value = True Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = PARAM_NEEDED
@@ -536,6 +576,40 @@ Private Sub validate_parameters()
     If lbl_training_data.tag = "" Then
         lbl_training_data.BackColor = RED
         lbl_training_data.ControlTipText = DATA_NEEDED
+    ElseIf Left(lbl_training_data.tag, 5) = "File:" Then
+        Dim file_name As String
+        file_name = Split(lbl_training_data.tag, ": ")(1)
+        If Right(file_name, 4) <> ".xls" Or Right(file_name, 5) <> ".xlsx" Or Right(file_name, 4) <> ".csv" Then
+            lbl_training_data.BackColor = RED
+            lbl_training_data.ControlTipText = UNSUPPORTED_FILE_FORMAT
+        End If
+    ElseIf lbl_training_data.tag <> "" Then
+        Dim i As Integer
+        For i = 1 To vars.count
+            If vars(i) = "" Then
+                lbl_training_data.BackColor = RED
+                lbl_training_data.ControlTipText = BLANK_HEADER
+            ElseIf Not IsError(Application.Match(LCase(vars(i)), UNSUPPORTED_HEADERS, 0)) Then
+                lbl_training_data.BackColor = RED
+                lbl_training_data.ControlTipText = UNSUPPORTED_HEADER
+            ElseIf IsNumeric(Left(vars(i), 1)) Then
+                lbl_training_data.BackColor = RED
+                lbl_training_data.ControlTipText = UNSUPPORTED_HEADER
+            Else
+            ' Count number of times header appears
+                Dim j As Integer, c As Integer
+                c = 0
+                For j = 1 To vars.count
+                    If vars(i) = vars(j) Then
+                        c = c + 1
+                    End If
+                Next j
+                If c > 1 Then
+                    lbl_training_data.BackColor = RED
+                    lbl_training_data.ControlTipText = DUPLICATE_HEADER
+                End If
+            End If
+        Next i
     End If
     
     ' Check the formula and data
