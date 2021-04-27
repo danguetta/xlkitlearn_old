@@ -358,7 +358,7 @@ Public Function isWeightList(list_string As String) As Boolean
 End Function
 
 Public Sub clear_vars()
-    While vars.count > 0
+    While vars.Count > 0
         vars.Remove (1)
     Wend
 End Sub
@@ -426,8 +426,8 @@ Public Sub update_vars()
     
     If data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE" Then
         ' We have a sparse dataset - column names are blank
-    ElseIf data_range.Columns.count < 50 Then
-        For i = 1 To data_range.Columns.count
+    ElseIf data_range.Columns.Count < 50 Then
+        For i = 1 To data_range.Columns.Count
             vars.Add Trim(data_range(1, i))
         Next i
         
