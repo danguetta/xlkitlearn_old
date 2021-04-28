@@ -150,45 +150,68 @@ Sub run_addin(f_name As String, this_status_cell As String)
         Exit Sub
     End If
     
-    ' Check for errors in dataset
-    Dim y_var As String, data_range As Range, output_col As Integer
-    y_var = Trim(Split(frm_pred.txt_formula.Text, "~")(0))
-    Set data_range = Range(remove_workbook_from_range(frm_pred.lbl_training_data.tag))
-    If Not (data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE") Then
-        Dim i As Integer, c As Integer
-        For i = 1 To data_range.Columns.count
-            If data_range(1, i) = y_var Then
-                c = c + 1
-                output_col = i
-            End If
-        Next i
-        If c = 0 Then
-            MsgBox "Output variable not found in dataset."
-            Exit Sub
+    ' If data is in a separate file, check that it exists
+    Dim file_path As String: file_path = ""
+    If f_name = "predictive_addin" Then
+        If Left(frm_pred.lbl_training_data.tag, 5) = "File:" Then
+            file_path = Right(frm_pred.lbl_training_data.tag, 7)
         End If
-        ' Check for non-numerical values in output column
-        Dim j As Integer
-        For j = 2 To data_range.Rows.count
-            If Not IsNumeric(Trim(data_range(j, output_col))) Then
-                MsgBox "Output variable values must be numeric."
+    ElseIf f_name = "text_addin" Then
+        file_path = tfrm_text.xt_source_data.Text
+    End If
+    
+    If file_path <> "" Then
+        #If Mac Then
+            ' Don't check on Mac due to security settings
+        #Else
+            If Not FileExists(ThisWorkbook.Path & file_path) Then
+                MsgBox "Data file not found.", vbExclamation
                 Exit Sub
             End If
-        Next j
-        ' Check for non-numerical values in input variable columns if using dot formula
-        If InStr(frm_pred.txt_formula.Text, ".") Then
-            Dim k As Integer, col As Integer
-            For col = 1 To data_range.Columns.count
-                If data_range(1, col) = y_var Then
-                    ' Do nothing, checked above
-                Else
-                    For k = 2 To 41
-                        If Not IsNumeric(Trim(data_range(k, col))) Then
-                            MsgBox "Non-numeric variables are not supported when using a dot formula."
-                            Exit Sub
-                        End If
-                    Next k
+        #End If
+    End If
+    
+    ' Check for errors in dataset if not an external file (predictive add-in only)
+    If Left(frm_pred.lbl_training_data.tag, 5) <> "File:" And f_name = "predictive_addin" Then
+        Dim y_var As String, data_range As Range, output_col As Integer
+        y_var = Trim(Split(frm_pred.txt_formula.Text, "~")(0))
+        Set data_range = Range(remove_workbook_from_range(frm_pred.lbl_training_data.tag))
+        If Not (data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE") Then
+            Dim i As Integer, c As Integer
+            For i = 1 To data_range.Columns.count
+                If data_range(1, i) = y_var Then
+                    c = c + 1
+                    output_col = i
                 End If
-            Next col
+            Next i
+            If c = 0 Then
+                MsgBox "Output variable not found in dataset."
+                Exit Sub
+            End If
+            ' Check for non-numerical values in output column
+            Dim j As Integer
+            For j = 2 To data_range.Rows.count
+                If Not IsNumeric(Trim(data_range(j, output_col))) Then
+                    MsgBox "Output variable values must be numeric."
+                    Exit Sub
+                End If
+            Next j
+            ' Check for non-numerical values in input variable columns if using dot formula
+            If InStr(frm_pred.txt_formula.Text, ".") Then
+                Dim k As Integer, col As Integer
+                For col = 1 To data_range.Columns.count
+                    If data_range(1, col) = y_var Then
+                        ' Do nothing, checked above
+                    Else
+                        For k = 2 To 41
+                            If Not IsNumeric(Trim(data_range(k, col))) Then
+                                MsgBox "Non-numeric variables are not supported when using a dot formula."
+                                Exit Sub
+                            End If
+                        Next k
+                    End If
+                Next col
+            End If
         End If
     End If
     

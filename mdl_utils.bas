@@ -218,9 +218,6 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
                                         Right(dialogue_output, 5) = ".xlsx") Then
             get_range = "File: " & dialogue_output
             Exit Function
-        Else
-            MsgBox "Please enter a supported file type. .xls, .xlsx, or .csv only."
-            Exit Function
         End If
         
         ' Check whether it's contiguous by checking whether there is a comma
@@ -241,7 +238,13 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
         ' Ensure this is a valid range
         If check_valid_range(dialogue_output) = False Then
             If accept_file_name Then
-                MsgBox "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet.", vbExclamation
+                Dim accepted_files As Variant
+                accepted_files = Array("xls", "xlsx", "csv")
+                If InStr(Right(dialogue_output, 6), ".") And IsError(Application.Match(Split(dialogue_output, ".")(1), accepted_files, 0)) Then
+                    MsgBox "Only xls, xlsx, and csv files are accepted.", vbExclamation
+                Else
+                    MsgBox "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet.", vbExclamation
+                End If
             Else
                 MsgBox "Please enter a valid range.", vbExclamation
             End If

@@ -456,6 +456,7 @@ Private Sub validate_parameters()
     Const BS_GT10_VARS = "Best-subset selection with more than 10 variables would result in over 1000 competing models." & _
                                             " Consider using something more robust than XLKitLearn."
     Const BS_WITH_INTERCEPT = "XLKitLearn doesn't support best-subset selection with an intercept suppressing term."
+    Const HEADERS_DONT_MATCH = "Headers in evaluation or prediction dataset must match headers in training set."
                                             
     Dim UNSUPPORTED_HEADERS As Variant
     UNSUPPORTED_HEADERS = Array("intercept", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", _
@@ -558,7 +559,7 @@ Private Sub validate_parameters()
     If Not IsNumeric(txt_evaluation_perc.Text) And Trim(txt_evaluation_perc.Text) <> "" Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = NON_NUMERIC
-    ElseIf Trim(txt_evaluation_perc.Text) < 0 Or Trim(txt_evaluation_perc.Text) > 100 Then
+    ElseIf Trim(txt_evaluation_perc.Text) <> "" And (Trim(txt_evaluation_perc.Text) < 0 Or Trim(txt_evaluation_perc.Text) > 100) Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = PERC_OUT_OF_RANGE
     ElseIf Trim(txt_evaluation_perc.Text) = "" And opt_perc_eval.Value = True Then
@@ -604,6 +605,41 @@ Private Sub validate_parameters()
                 End If
             End If
         Next i
+    End If
+    
+    ' Check that evaluation and prediction data headers match training data
+    If lbl_evaluation_data.tag <> "" Then
+        Dim eval_range As Range
+        Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))
+        c = 0
+        For i = 1 To eval_range.Columns.Count
+            For j = 1 To vars.Count
+                If eval_range(1, i) = vars(j) Then
+                    c = c + 1
+                End If
+            Next j
+        Next i
+        If c = 0 Or (eval_range.Columns.Count <> vars.Count) Then
+            lbl_evaluation_data.BackColor = RED
+            lbl_evaluation_data.ControlTipText = HEADERS_DONT_MATCH
+        End If
+    End If
+    
+    If lbl_prediction_data.tag <> "" Then
+        Dim pred_range As Range
+        Set pred_range = Range(remove_workbook_from_range(lbl_prediction_data.tag))
+        c = 0
+        For i = 1 To pred_range.Columns.Count
+            For j = 1 To vars.Count
+                If eval_range(1, i) = vars(j) Then
+                    c = c + 1
+                End If
+            Next j
+        Next i
+        If c = 0 Or (pred_range.Columns.Count <> vars.Count) Then
+            lbl_prediction_data.BackColor = RED
+            lbl_prediction_data.ControlTipText = HEADERS_DONT_MATCH
+        End If
     End If
     
     ' Check the formula and data
