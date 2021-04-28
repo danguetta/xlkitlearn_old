@@ -157,7 +157,7 @@ Sub run_addin(f_name As String, this_status_cell As String)
             file_path = Right(frm_pred.lbl_training_data.tag, 7)
         End If
     ElseIf f_name = "text_addin" Then
-        file_path = tfrm_text.xt_source_data.Text
+        file_path = frm_text.txt_source_data.Text
     End If
     
     If file_path <> "" Then
