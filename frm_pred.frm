@@ -487,9 +487,9 @@ Private Sub validate_parameters()
     lbl_evaluation_data.ControlTipText = ""
     lbl_prediction_data.ControlTipText = ""
     
-    ' Check for numeric entries
+    ' Check parameters for errors
     If (cmb_model.Value = "Linear/logistic regression") And (LCase(txt_param1.Text) = "bs") Then
-        'We're doing best subset selection, we're good
+        ' If doing best subset, make sure using only one formula, without intercept suppressing term, and with less than 10 vars
         If InStr(Trim(txt_formula.Text), "&") <> 0 Then
             txt_formula.BackColor = RED
             txt_formula.ControlTipText = BS_GT1_FORMULA
@@ -576,10 +576,9 @@ Private Sub validate_parameters()
     If lbl_training_data.tag = "" Then
         lbl_training_data.BackColor = RED
         lbl_training_data.ControlTipText = DATA_NEEDED
-    ElseIf Left(lbl_training_data.tag, 5) = "File:" Then
-        ' Don't try to check data if in another file
     Else
         Dim i As Integer
+        ' If on Mac and using external file, vars will be empty and this whole section will effectively be skipped
         For i = 1 To vars.count
             If vars(i) = "" Then
                 lbl_training_data.BackColor = RED
@@ -595,9 +594,7 @@ Private Sub validate_parameters()
                 Dim j As Integer, c As Integer
                 c = 0
                 For j = 1 To vars.count
-                    If vars(i) = vars(j) Then
-                        c = c + 1
-                    End If
+                    If vars(i) = vars(j) Then c = c + 1
                 Next j
                 If c > 1 Then
                     lbl_training_data.BackColor = RED
@@ -608,39 +605,37 @@ Private Sub validate_parameters()
     End If
     
     ' Check that evaluation and prediction data headers match training data
-    If lbl_evaluation_data.tag <> "" Then
-        Dim eval_range As Range
-        Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))
-        c = 0
-        For i = 1 To eval_range.Columns.Count
-            For j = 1 To vars.Count
-                If eval_range(1, i) = vars(j) Then
-                    c = c + 1
-                End If
-            Next j
-        Next i
-        If c = 0 Or (eval_range.Columns.Count <> vars.Count) Then
-            lbl_evaluation_data.BackColor = RED
-            lbl_evaluation_data.ControlTipText = HEADERS_DONT_MATCH
+    If Left(lbl_training_data.tag, 5) <> "File:" Then
+        If lbl_evaluation_data.tag <> "" Then
+            Dim eval_range As Range
+            Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))
+            c = 0
+            For i = 1 To eval_range.Columns.Count
+                For j = 1 To vars.Count
+                    If eval_range(1, i) = vars(j) Then c = c + 1
+                Next j
+            Next i
+            If c = 0 Or (eval_range.Columns.count <> vars.Count) Then
+                lbl_evaluation_data.BackColor = RED
+                lbl_evaluation_data.ControlTipText = HEADERS_DONT_MATCH
+            End If
         End If
-    End If
-    
-    If lbl_prediction_data.tag <> "" Then
-        Dim pred_range As Range
-        Set pred_range = Range(remove_workbook_from_range(lbl_prediction_data.tag))
-        c = 0
-        For i = 1 To pred_range.Columns.Count
-            For j = 1 To vars.Count
-                If eval_range(1, i) = vars(j) Then
-                    c = c + 1
-                End If
-            Next j
-        Next i
-        If c = 0 Or (pred_range.Columns.Count <> vars.Count) Then
-            lbl_prediction_data.BackColor = RED
-            lbl_prediction_data.ControlTipText = HEADERS_DONT_MATCH
+        
+        If lbl_prediction_data.tag <> "" Then
+            Dim pred_range As Range
+            Set pred_range = Range(remove_workbook_from_range(lbl_prediction_data.tag))
+            c = 0
+            For i = 1 To pred_range.Columns.Count
+                For j = 1 To vars.Count
+                    If eval_range(1, i) = vars(j) Then c = c + 1
+                Next j
+            Next i
+            If c = 0 Or (pred_range.Columns.Count <> vars.Count) Then
+                lbl_prediction_data.BackColor = RED
+                lbl_prediction_data.ControlTipText = HEADERS_DONT_MATCH
+            End If
         End If
-    End If
+    End If 
     
     ' Check the formula and data
     Dim error_message As String
