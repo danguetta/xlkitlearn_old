@@ -465,6 +465,9 @@ Public Function validate_formula(formula_text As String) As String
             
             Dim k As Integer
             For k = 0 To UBound(this_term)
+                If InStr(Trim(this_term(k)), "-1") Or InStr(Trim(this_term(k)), "- 1") Then
+                    this_term(k) = Trim(Split(this_term(k), "-")(0))
+                End If
                 If Trim(this_term(k)) = "" Then
                     validate_formula = "Please complete your formula. The problematic formula was " & single_formulas(i) & "."
                     Exit Function
