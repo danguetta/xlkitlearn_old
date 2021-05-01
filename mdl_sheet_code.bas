@@ -150,6 +150,14 @@ Sub run_addin(f_name As String, this_status_cell As String)
         Exit Sub
     End If
     
+    ' If data provided within the sheet, ensure the range exists
+    If f_name = "predictive_addin" And Left(frm_pred.lbl_training_data.tag, 5) <> "File:" Then
+        If Not check_valid_range(frm_pred.lbl_training_data.tag) Then
+            MsgBox "Unable to read data range. Please make sure the range exists in this file."
+            Exit Sub
+        End If
+    End If
+    
     ' If data is in a separate file, check that it exists
     Dim file_path As String: file_path = ""
     If f_name = "predictive_addin" Then
@@ -173,42 +181,34 @@ Sub run_addin(f_name As String, this_status_cell As String)
     
     ' Check for errors in dataset if not an external file (predictive add-in only)
     If Left(frm_pred.lbl_training_data.tag, 5) <> "File:" And f_name = "predictive_addin" Then
-        Dim y_var As String, data_range As Range, output_col As Integer
+        Dim y_var As String, data_range As Range, output_col As Integer, full_output_col As Range
         y_var = Trim(Split(frm_pred.txt_formula.Text, "~")(0))
         Set data_range = Range(remove_workbook_from_range(frm_pred.lbl_training_data.tag))
         If Not (data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE") Then
-            Dim i As Integer, c As Integer
-            For i = 1 To data_range.Columns.count
-                If data_range(1, i) = y_var Then
-                    c = c + 1
-                    output_col = i
-                End If
-            Next i
-            If c = 0 Then
+            If WorksheetFunction.CountIf(data_range, y_var) = 0 Then
                 MsgBox "Output variable not found in dataset."
                 Exit Sub
             End If
             ' Check for non-numerical values in output column
-            Dim j As Integer
-            For j = 2 To data_range.Rows.count
-                If Not IsNumeric(Trim(data_range(j, output_col))) Then
-                    MsgBox "Output variable values must be numeric."
-                    Exit Sub
-                End If
-            Next j
+            output_col = WorksheetFunction.Match(y_var, data_range(1), 0)
+            Set full_output_col = data_range(1, output_col).EntireColumn
+            If WorksheetFunction.CountA(full_output_col) - WorksheetFunction.count(full_output_col) > 1 Then
+                MsgBox "Output variable values must be numeric."
+                Exit Sub
+            End If
+            Dim i As Integer, j As Integer, c As Integer
             ' Check for non-numerical values in input variable columns if using dot formula
             If InStr(frm_pred.txt_formula.Text, ".") Then
-                Dim k As Integer, col As Integer
+                Dim col As Integer, full_col As Range
                 For col = 1 To data_range.Columns.count
                     If data_range(1, col) = y_var Then
-                        ' Do nothing, checked above
+                        ' Checked above
                     Else
-                        For k = 2 To 41
-                            If Not IsNumeric(Trim(data_range(k, col))) Then
-                                MsgBox "Non-numeric variables are not supported when using a dot formula."
-                                Exit Sub
-                            End If
-                        Next k
+                        Set full_col = data_range(1, col).EntireColumn
+                        If WorksheetFunction.CountA(full_col) - WorksheetFunction.count(full_col) > 1 Then
+                            MsgBox "Non-numeric variables are not supported when using a dot formula."
+                            Exit Sub
+                        End If
                     End If
                 Next col
             End If
