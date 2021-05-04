@@ -493,6 +493,8 @@ Private Sub validate_parameters()
     Const DUPLICATE_HEADER = "This column name is repeated; column names can only appear once"
     Const INVALID_VAR_CHAR = "Variable names can only contain letters, numbers, and underscores"
                                                                 
+    Const BAD_HEADERS = "Some of the headers in your data are invalid. Click on the button to the right to view errors."
+                                                                
     Dim UNSUPPORTED_HEADERS As Variant
     UNSUPPORTED_HEADERS = Array("intercept", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", _
                                             "else", "except", "false", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", _
@@ -681,6 +683,7 @@ Private Sub validate_parameters()
         
         If header_errors.count > 0 Then
             lbl_training_data.Width = FORMULA_WIDTH_SMALL
+            lbl_training_data.ControlTipText = BAD_HEADERS
             lbl_training_data.BackColor = RED
             
             lbl_training_errors.BackColor = RED
