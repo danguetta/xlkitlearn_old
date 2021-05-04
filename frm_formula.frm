@@ -147,7 +147,7 @@ Private Sub populate_list(Optional stub As String = "")
         lst_variables.AddItem "the formula."
     Else
         Dim i As Integer
-        For i = 1 To vars.Count
+        For i = 1 To vars.count
             If stub = Mid(vars.Item(i), 1, Len(stub)) Then
                 lst_variables.AddItem vars.Item(i)
             End If

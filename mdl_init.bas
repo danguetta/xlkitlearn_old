@@ -1,10 +1,18 @@
 Option Explicit
 
 Public vars As New Collection
+Public var_types As New Collection
 Public mac_file As Boolean
 Public excel_file As Boolean
 Public too_many_cols As Boolean
 Public invalid_file As Boolean
+
+' Create a colleciton to store any invalid headers
+Public header_errors As New Collection
+
+' Create variables to detect any errors in the settings
+Public pred_errors As Boolean
+Public text_errors As Boolean
 
 ' Change this to True before releasing
 '   (note: if upgrading to a new version of xlwings, make sure show_error
@@ -34,6 +42,13 @@ Public Const RED = 12632319
 
 Public Const GRAPH_LINE_PER_INCH = 3
 
+' Import the ability to pause
+#If VBA7 Then ' Excel 2010 or later
+    Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal Milliseconds As LongPtr)
+#Else ' Excel 2007 or earlier
+    Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal Milliseconds As Long)
+#End If
+
 Public Sub prepare_for_prod()
     ThisWorkbook.Sheets("Add-in").Range("D9").Value = "{'model'|'Random forest'`'formula'|'median_property_value ~ crime_per_capita + prop_zoned_over_25k + prop_non_retail_acres + bounds_river + nox_concentration + av_rooms_per_dwelling + prop_owner_occupied_pre_1940 + dist_to_employment_ctr + highway_accessibility + tax_rate + pupil_teacher_ratio'`'param1'|'3 & 4 & 5 & 6'`'param2'|'25'`'param3'|''`'training_data'|'[xlkitlearn.xlsm]boston_housing!$A$1:$L$507'`'K'|'5'`'ts_data'|'False'`'evaluation_perc'|'30'`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
     ThisWorkbook.Sheets("Add-in").Range("D14").Value = ""
@@ -42,7 +57,7 @@ Public Sub prepare_for_prod()
     
     Dim delete_sheets As New Collection
     Dim i As Integer
-    For i = 1 To ThisWorkbook.Sheets.Count
+    For i = 1 To ThisWorkbook.Sheets.count
         If (ThisWorkbook.Sheets(i).Name <> "Add-in") _
                 And (ThisWorkbook.Sheets(i).Name <> "xlwings.conf") _
                 And (ThisWorkbook.Sheets(i).Name <> "code_text") _
@@ -51,7 +66,7 @@ Public Sub prepare_for_prod()
         End If
     Next i
     Application.DisplayAlerts = False
-    For i = 1 To delete_sheets.Count
+    For i = 1 To delete_sheets.count
         ThisWorkbook.Sheets(delete_sheets.Item(i)).Delete
     Next i
     Application.DisplayAlerts = True
@@ -73,7 +88,7 @@ Public Sub update_names()
     ' Delete all names
     Dim i As Integer
     i = 0
-    While (ThisWorkbook.Names.Count > 0) And (i < 50)
+    While (ThisWorkbook.Names.count > 0) And (i < 50)
         ThisWorkbook.Names.Item(1).Delete
         i = i + 1
     Wend
@@ -115,4 +130,6 @@ update_conf_error:
     MsgBox "It looks like XLKitLearn has hit a snag that sometimes happens the first time you enable macros. Please save the file, " _
                 & "close it, and re-open it, and you should be good to go.", vbExclamation
 End Sub
+
+
 

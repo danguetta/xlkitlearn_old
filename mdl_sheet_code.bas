@@ -150,68 +150,36 @@ Sub run_addin(f_name As String, this_status_cell As String)
         Exit Sub
     End If
     
-    ' If data provided within the sheet, ensure the range exists
-    If f_name = "predictive_addin" And Left(frm_pred.lbl_training_data.tag, 5) <> "File:" Then
-        If Not check_valid_range(frm_pred.lbl_training_data.tag) Then
-            MsgBox "Unable to read data range. Please make sure the range exists in this file."
-            Exit Sub
-        End If
-    End If
+    ' Ensure there are no settings errors. First, load and unload each form to
+    ' check settings
     
-    ' If data is in a separate file, check that it exists
-    Dim file_path As String: file_path = ""
     If f_name = "predictive_addin" Then
-        If Left(frm_pred.lbl_training_data.tag, 5) = "File:" Then
-            file_path = Right(frm_pred.lbl_training_data.tag, 7)
-        End If
-    ElseIf f_name = "text_addin" Then
-        file_path = frm_text.txt_source_data.Text
+        Load frm_pred
+        Sleep 100
+        Unload frm_pred
     End If
     
-    If file_path <> "" Then
-        #If Mac Then
-            ' Don't check on Mac due to security settings
-        #Else
-            If Not FileExists(ThisWorkbook.Path & file_path) Then
-                MsgBox "Data file not found.", vbExclamation
-                Exit Sub
-            End If
-        #End If
+    If f_name = "text_addin" Then
+        Load frm_text
+        Sleep 100
+        Unload frm_text
     End If
     
-    ' Check for errors in dataset if not an external file (predictive add-in only)
-    If Left(frm_pred.lbl_training_data.tag, 5) <> "File:" And f_name = "predictive_addin" Then
-        Dim y_var As String, data_range As Range, output_col As Integer, full_output_col As Range
-        y_var = Trim(Split(frm_pred.txt_formula.Text, "~")(0))
-        Set data_range = Range(remove_workbook_from_range(frm_pred.lbl_training_data.tag))
-        If Not (data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE") Then
-            If WorksheetFunction.CountIf(data_range, y_var) = 0 Then
-                MsgBox "Output variable not found in dataset."
-                Exit Sub
+    If (f_name = "predictive_addin" And pred_errors = True) Or (f_name = "text_addin" And text_errors = True) Then
+        Dim msg_res As Integer
+        msg_res = MsgBox("It looks like some of your settings contain errors. These will be highlighted in red in the " & _
+                           "settings dialogue when you click 'Edit Settings'." & vbCrLf & vbCrLf & "Would you like to run the add-in anyway? " & _
+                           "Click 'Yes' to run, and click 'No' to abort this run and launch the settings dialogue to see " & _
+                           "where the errors are.", vbYesNo + vbExclamation, "Settings errors")
+        
+        If msg_res = vbNo Then
+            If f_name = "predictive_addin" Then
+                frm_pred.Show False
+            Else
+                frm_text.Show False
             End If
-            ' Check for non-numerical values in output column
-            output_col = WorksheetFunction.Match(y_var, data_range(1), 0)
-            Set full_output_col = data_range(1, output_col).EntireColumn
-            If WorksheetFunction.CountA(full_output_col) - WorksheetFunction.count(full_output_col) > 1 Then
-                MsgBox "Output variable values must be numeric."
-                Exit Sub
-            End If
-            Dim i As Integer, j As Integer, c As Integer
-            ' Check for non-numerical values in input variable columns if using dot formula
-            If InStr(frm_pred.txt_formula.Text, ".") Then
-                Dim col As Integer, full_col As Range
-                For col = 1 To data_range.Columns.count
-                    If data_range(1, col) = y_var Then
-                        ' Checked above
-                    Else
-                        Set full_col = data_range(1, col).EntireColumn
-                        If WorksheetFunction.CountA(full_col) - WorksheetFunction.count(full_col) > 1 Then
-                            MsgBox "Non-numeric variables are not supported when using a dot formula."
-                            Exit Sub
-                        End If
-                    End If
-                Next col
-            End If
+            
+            Exit Sub
         End If
     End If
     
@@ -481,3 +449,5 @@ end_format_sheet:
     ' Clean up
     Set sht = Nothing
 End Sub
+
+

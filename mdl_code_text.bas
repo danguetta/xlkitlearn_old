@@ -5,11 +5,12 @@ Sub load_code()
     original_calc_mode = Application.Calculation
     Application.Calculation = xlCalculationManual
     
-    ' Read the code from the ba2_addin.py file
-    If FileExists(ThisWorkbook.Path & "\ba2_addin.py") Then
-        Open ThisWorkbook.Path & "\ba2_addin.py" For Input As #1
+    ' Read the code from the xlkitlearn.py file
+    If FileExists(ThisWorkbook.Path & "\xlkitlearn.py") Then
+        Open ThisWorkbook.Path & "\xlkitlearn.py" For Input As #1
     Else
-        Open "C:\Users\crg2133\Google Drive\Academic\Courses\BA2\Add-in\Working folder\ba2_addin.py" For Input As #1
+        MsgBox "Could not find code file xlkitlearn.py.", vbCritical
+        Exit Sub
     End If
     
     Dim code_text As String

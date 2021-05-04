@@ -241,7 +241,7 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
                 Dim accepted_files As Variant
                 accepted_files = Array("xls", "xlsx", "csv")
                 If InStr(Right(dialogue_output, 6), ".") And IsError(Application.Match(Split(dialogue_output, ".")(1), accepted_files, 0)) Then
-                    MsgBox "Only xls, xlsx, and csv files are accepted.", vbExclamation
+                    MsgBox "XLKitLearn can only accept xls, xlsx, and csv files.", vbExclamation
                 Else
                     MsgBox "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet.", vbExclamation
                 End If
@@ -394,7 +394,7 @@ Public Function variable_valid(Item, Optional allow_substring As Boolean = False
     
     Item = Trim(Item)
     
-    For i = 1 To vars.Count
+    For i = 1 To vars.count
         If allow_substring Then
             cur_item = Mid(vars.Item(i), 1, Len(Item))
         Else
@@ -445,10 +445,49 @@ Public Function validate_formula(formula_text As String) As String
         formula_parts(0) = Split(formula_parts(0), ")")(0)
         formula_parts(0) = Split(formula_parts(0), "(")(UBound(Split(formula_parts(0), "(")))
         
-        If vars.Count > 0 And variable_valid(formula_parts(0)) = "" Then
+        If vars.count > 0 And variable_valid(formula_parts(0)) = "" Then
             invalid_terms.Add (Trim(formula_parts(0)))
         End If
         
+        ' If we've checked the numerical status of our columns, make sure the output
+        ' (y) column is numeric. If something like (var=1) is used in the output,
+        ' we won't match any entry in vars, so this won't bite
+        If var_types.count > 0 Then
+            Dim all_numeric As Boolean
+            all_numeric = True
+        
+            Dim w As Integer
+            For w = 1 To var_types.count
+                If var_types.Item(w) <> "numeric" Then
+                    all_numeric = False
+                End If
+            
+                If vars.Item(w) = formula_parts(0) Then
+                    If var_types.Item(w) = "missing" Then
+                        validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
+                                               "has missing values in some rows"
+                        Exit Function
+                        
+                    ElseIf var_types.Item(w) = "string" Then
+                        validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
+                                               "has non-numeric values in some rows"
+                        Exit Function
+                    End If
+                End If
+            Next w
+            
+            ' If we have a dot formula, make sure every column is numeric
+            If Replace(Replace(formula_parts(1), " ", ""), "-1", "") = "." Then
+                If all_numeric = False Then
+                    validate_formula = "You are using a dot-formula of the form y ~ ., but your columns are not all numeric. " & _
+                                        "XLKitLearn cannot automatically generate categorical variables for you when you use dot " & _
+                                        "formulas."
+                    Exit Function
+                End If
+            End If
+        End If
+        
+        ' Now split the second part of the formula
         formula_parts = Split(formula_parts(1) + " ", "+")
         
         Dim j As Integer
@@ -468,24 +507,25 @@ Public Function validate_formula(formula_text As String) As String
                 If InStr(Trim(this_term(k)), "-1") Or InStr(Trim(this_term(k)), "- 1") Then
                     this_term(k) = Trim(Split(this_term(k), "-")(0))
                 End If
+                
                 If Trim(this_term(k)) = "" Then
                     validate_formula = "Please complete your formula. The problematic formula was " & single_formulas(i) & "."
                     Exit Function
                 End If
                 
-                If vars.Count > 0 And variable_valid(this_term(k)) = "" Then invalid_terms.Add (Trim(this_term(k)))
+                If vars.count > 0 And variable_valid(this_term(k)) = "" Then invalid_terms.Add (Trim(this_term(k)))
             Next k
         
         Next j
         
     Next i
      
-    If invalid_terms.Count > 0 Then
+    If invalid_terms.count > 0 Then
         validate_formula = "It looks like at least one term in your formula(s) does not exist in your data. " & _
                     "The problematic terms were "
-        For i = 1 To invalid_terms.Count
+        For i = 1 To invalid_terms.count
             validate_formula = validate_formula & invalid_terms.Item(i)
-            If i <> invalid_terms.Count Then validate_formula = validate_formula & ", "
+            If i <> invalid_terms.count Then validate_formula = validate_formula & ", "
         Next i
         validate_formula = validate_formula & ". Please remember these variable names are case sensitive."
     End If
@@ -509,5 +549,33 @@ try_two:
     localize_number = n
     
     On Error GoTo 0
+    
+End Function
+
+Public Function pad_string(s As String, tot_length As Integer)
+    If Len(s) > tot_length Then
+        pad_string = Left(s, tot_length - 4) & "... "
+    Else
+        pad_string = s
+        Dim i As Integer
+        For i = Len(s) To tot_length - 1
+            pad_string = pad_string & " "
+        Next i
+    End If
+End Function
+
+Function valid_var_chars(strSource As String) As Boolean
+    valid_var_chars = True
+
+    Dim i As Integer
+    For i = 1 To Len(strSource)
+        Select Case Asc(Mid(strSource, i, 1))
+            Case 48 To 57, 65 To 90, 97 To 122, 95:
+                DoEvents
+            Case Else
+                valid_var_chars = False
+                Exit Function
+        End Select
+    Next i
     
 End Function

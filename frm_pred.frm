@@ -77,12 +77,10 @@ End Sub
 
 Private Sub lbl_evaluation_data_Click()
     Me.Hide
-    lbl_evaluation_data.tag = get_range("Select a range for the evaluation data." & vbCrLf & vbCrLf & _
-                                            "This new data should either have IDENTICAL columns as the " & _
-                                            "training data - in the same order - OR should have a header " & _
-                                            "row in any orders with identical column names to those in the " & _
-                                            "training data.", _
-                                            lbl_evaluation_data.tag, True, True)
+    
+    lbl_evaluation_data.tag = get_range("Select the evaluation range or file. EITHER with headers matching training data in the first row (in any order) " & _
+                                            "OR without headers but containing the same number of columns as the training data, " & _
+                                            "in the same order.", lbl_prediction_data.tag, True, True)
                                             
     If lbl_evaluation_data.tag = "" Then
         lbl_evaluation_data.caption = BLANK_RANGE_SELECTOR
@@ -99,11 +97,11 @@ End Sub
 
 Private Sub lbl_prediction_data_Click()
     Me.Hide
-    lbl_prediction_data.tag = get_range("Select a range for the evaluation data." & vbCrLf & vbCrLf & _
-                                            "This new data should either have IDENTICAL columns as the training data " & _
-                                            "- in the same order - OR should have a header row in any orders with " & _
-                                            "identical column names to those in the training data.", lbl_prediction_data.tag, True, True)
-                                            
+                                  
+    lbl_prediction_data.tag = get_range("Select the prediction range or file. EITHER with headers matching training data in the first row (in any order) " & _
+                                            "OR without headers but containing the same number of columns as the training data, " & _
+                                            "in the same order.", lbl_prediction_data.tag, True, True)
+               
     If lbl_prediction_data.tag = "" Then
         lbl_prediction_data.caption = BLANK_RANGE_SELECTOR
     ElseIf Left(lbl_prediction_data.tag, 6) = "File: " Then
@@ -135,6 +133,10 @@ Private Sub lbl_training_data_Click()
     
     Me.Show False
     validate_parameters
+End Sub
+
+Private Sub lbl_training_errors_Click()
+    frm_data_errors.Show False
 End Sub
 
 Private Sub opt_no_eval_Click()
@@ -358,8 +360,18 @@ Public Function isWeightList(list_string As String) As Boolean
 End Function
 
 Public Sub clear_vars()
-    While vars.Count > 0
+    While vars.count > 0
         vars.Remove (1)
+    Wend
+    
+    While var_types.count > 0
+        var_types.Remove (1)
+    Wend
+End Sub
+
+Public Sub clear_header_errors()
+    While header_errors.count > 0
+        header_errors.Remove (1)
     Wend
 End Sub
 
@@ -426,12 +438,33 @@ Public Sub update_vars()
     
     If data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE" Then
         ' We have a sparse dataset - column names are blank
-    ElseIf data_range.Columns.Count < 50 Then
-        For i = 1 To data_range.Columns.Count
+    ElseIf data_range.Columns.count < 50 Then
+        For i = 1 To data_range.Columns.count
             vars.Add Trim(data_range(1, i))
         Next i
         
         vars.Add "."
+        
+        ' We have an Excel range with fewer than 50 columns, and a dense datataset. Do some
+        ' due diligence and see whether these columns contain any non-numeric data
+        For i = 1 To data_range.Columns.count
+            Dim this_col As Range
+            Dim this_count As Long
+            Dim this_countA As Long
+            Dim this_len As Long
+            
+            this_len = data_range.Rows.count - 1
+            this_count = WorksheetFunction.count(data_range.Columns(i).Offset(1).Resize(this_len))
+            this_countA = WorksheetFunction.CountA(data_range.Columns(i).Offset(1).Resize(this_len))
+            
+            If this_countA <> this_len Then
+                var_types.Add "missing"
+            ElseIf this_countA <> this_count Then
+                var_types.Add "string"
+            Else
+                var_types.Add "numeric"
+            End If
+        Next i
     Else
         too_many_cols = True
     End If
@@ -448,21 +481,29 @@ Private Sub validate_parameters()
     Const DATA_NEEDED = "Training data is needed."
     Const KNN_INVALID = "This parameter must either be 'u', 'd', 'uniform', or 'distance'."
     Const PERC_OUT_OF_RANGE = "This parameter is a percentage and must be between 0 and 100."
-    Const BLANK_HEADER = "Headers can not be blank."
-    Const UNSUPPORTED_HEADER = "Headers must be valid python variables. They can not be a python keyword," & _
-                                                        " 'intercept', or begin with a number."
-    Const DUPLICATE_HEADER = "Headers must only appear once in the dataset."
     Const BS_GT1_FORMULA = "Best-subset selection can only be done with one formula."
     Const BS_GT10_VARS = "Best-subset selection with more than 10 variables would result in over 1000 competing models." & _
                                             " Consider using something more robust than XLKitLearn."
     Const BS_WITH_INTERCEPT = "XLKitLearn doesn't support best-subset selection with an intercept suppressing term."
     Const HEADERS_DONT_MATCH = "Headers in evaluation or prediction dataset must match headers in training set."
-                                            
+    
+    Const SPACE_HEADER = "This column name contains a space"
+    Const RESERVED_HEADER = "The name of this column is a 'reserved' Python keyword; try something else"
+    Const NUM_START_HEADER = "Column names cannot start with a number"
+    Const DUPLICATE_HEADER = "This column name is repeated; column names can only appear once"
+    Const INVALID_VAR_CHAR = "Variable names can only contain letters, numbers, and underscores"
+                                                                
     Dim UNSUPPORTED_HEADERS As Variant
     UNSUPPORTED_HEADERS = Array("intercept", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", _
                                             "else", "except", "false", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", _
                                             "none", "nonlocal", "not", "or", "pass", "raise", "return", "true", "try", "while", "with", "yield")
     
+    
+    Const FORMULA_WIDTH_LARGE = 198
+    Const FORMULA_WIDTH_SMALL = 132
+    
+    ' Start assuming everything is OK at a global level
+    pred_errors = False
     
     ' Clear all the entries
     txt_formula.BackColor = WHITE
@@ -487,155 +528,203 @@ Private Sub validate_parameters()
     lbl_evaluation_data.ControlTipText = ""
     lbl_prediction_data.ControlTipText = ""
     
+    lbl_training_data.Width = FORMULA_WIDTH_LARGE
+    lbl_training_errors.Visible = False
+    
+    ' Determine the number of parameters in th emodel in question
+    Dim n_params_required As Integer
+    n_params_required = UBound(Split(dict_utils(MODELS, cmb_model.Value), ",")) + 1
+    
     ' Check parameters for errors
     If (cmb_model.Value = "Linear/logistic regression") And (LCase(txt_param1.Text) = "bs") Then
         ' If doing best subset, make sure using only one formula, without intercept suppressing term, and with less than 10 vars
         If InStr(Trim(txt_formula.Text), "&") <> 0 Then
             txt_formula.BackColor = RED
             txt_formula.ControlTipText = BS_GT1_FORMULA
+            pred_errors = True
         ElseIf InStr(Trim(txt_formula.Text), "-1") <> 0 Then
             txt_formula.BackColor = RED
             txt_formula.ControlTipText = BS_WITH_INTERCEPT
+            pred_errors = True
         Else
             If InStr(Trim(txt_formula.Text), ".") = 0 Then
                 Dim count As Integer
-                count = Len(Trim(txt_formula.Text)) - Len(Replace(Trim(txt_formula.Text), "+", ""))
+                ' Find the number of terms separated by a "+" in the formula
+                count = UBound(Split(txt_formula.Text, "+")) + 1
                 If count >= 10 Then
                     txt_formula.BackColor = RED
                     txt_formula.ControlTipText = BS_GT10_VARS
+                    pred_errors = True
                 End If
             Else
                 If vars.count >= 10 Then
                     txt_formula.BackColor = RED
                     txt_formula.ControlTipText = BS_GT10_VARS
+                    pred_errors = True
                 End If
             End If
         End If
     ElseIf (Not isNumericList(txt_param1.Text)) Then
         txt_param1.BackColor = RED
         txt_param1.ControlTipText = NON_NUMERIC
+        pred_errors = True
     ElseIf Trim(txt_param1.Text) = "" And cmb_model.Value <> "Linear/logistic regression" Then
         txt_param1.BackColor = RED
         txt_param1.ControlTipText = PARAM_NEEDED
+        pred_errors = True
     End If
     
-    If (Not isNumericList(txt_param2.Text)) And cmb_model.Value <> "K-Nearest Neighbors" Then
-        txt_param2.BackColor = RED
-        txt_param2.ControlTipText = NON_NUMERIC
-    ElseIf Trim(txt_param2.Text) = "" And cmb_model.Value <> "K-Nearest Neighbors" Then
-        txt_param2.BackColor = RED
-        txt_param2.ControlTipText = PARAM_NEEDED
-    End If
-    
-    If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
-        If Not (isWeightList(txt_param2.Text)) Then
+    If n_params_required >= 2 Then
+        If (Not isNumericList(txt_param2.Text)) And cmb_model.Value <> "K-Nearest Neighbors" Then
             txt_param2.BackColor = RED
-            txt_param2.ControlTipText = KNN_INVALID
+            txt_param2.ControlTipText = NON_NUMERIC
+            pred_errors = True
+        ElseIf Trim(txt_param2.Text) = "" And cmb_model.Value <> "K-Nearest Neighbors" Then
+            txt_param2.BackColor = RED
+            txt_param2.ControlTipText = PARAM_NEEDED
+            pred_errors = True
+        End If
+    
+        If Trim(txt_param2.Text) <> "" And cmb_model.Value = "K-Nearest Neighbors" Then
+            If Not (isWeightList(txt_param2.Text)) Then
+                txt_param2.BackColor = RED
+                txt_param2.ControlTipText = KNN_INVALID
+                pred_errors = True
+            End If
         End If
     End If
     
-    If Not isNumericList(txt_param3.Text) Then
-        txt_param3.BackColor = RED
-        txt_param3.ControlTipText = NON_NUMERIC
-    ElseIf (Trim(txt_param3.Text) = "") And (cmb_model.Value <> "Boosted decision tree") Then
-        txt_param3.BackColor = RED
-        txt_param3.ControlTipText = PARAM_NEEDED
+    If n_params_required >= 3 Then
+        If Not isNumericList(txt_param3.Text) Then
+            txt_param3.BackColor = RED
+            txt_param3.ControlTipText = NON_NUMERIC
+            pred_errors = True
+        ElseIf (Trim(txt_param3.Text) = "") And (cmb_model.Value <> "Boosted decision tree") Then
+            txt_param3.BackColor = RED
+            txt_param3.ControlTipText = PARAM_NEEDED
+            pred_errors = True
+        End If
     End If
 
     If Not IsNumeric(txt_seed.Text) And Trim(txt_seed.Text) <> "" Then
         txt_seed.BackColor = RED
         txt_seed.ControlTipText = NON_NUMERIC
+        pred_errors = True
     End If
 
     If Not IsNumeric(txt_K.Text) And Trim(txt_K.Text) <> "" Then
         txt_K.BackColor = RED
         txt_K.ControlTipText = NON_NUMERIC
+        pred_errors = True
     ElseIf Trim(txt_K.Text) = "" And ((InStr(1, txt_formula.Text & txt_param1.Text _
                                     & txt_param2.Text & txt_param3.Text, "&") > 0) Or cmb_model.Value = "Boosted decision tree") Then
         txt_K.BackColor = RED
         txt_K.ControlTipText = PARAM_NEEDED
+        pred_errors = True
     End If
     
     If Not IsNumeric(txt_evaluation_perc.Text) And Trim(txt_evaluation_perc.Text) <> "" Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = NON_NUMERIC
+        pred_errors = True
     ElseIf Trim(txt_evaluation_perc.Text) <> "" And (Trim(txt_evaluation_perc.Text) < 0 Or Trim(txt_evaluation_perc.Text) > 100) Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = PERC_OUT_OF_RANGE
+        pred_errors = True
     ElseIf Trim(txt_evaluation_perc.Text) = "" And opt_perc_eval.Value = True Then
         txt_evaluation_perc.BackColor = RED
         txt_evaluation_perc.ControlTipText = PARAM_NEEDED
+        pred_errors = True
     End If
     
     If (Not IsNumeric(txt_seed.Text)) And (txt_seed.Text <> "") Then
         txt_seed.BackColor = RED
         txt_seed.ControlTipText = NON_NUMERIC
+        pred_errors = True
     End If
     
     ' Check the data
     If lbl_training_data.tag = "" Then
         lbl_training_data.BackColor = RED
         lbl_training_data.ControlTipText = DATA_NEEDED
+        pred_errors = True
     Else
+        clear_header_errors
+        
+        ' If on Mac and using external file, vars will be empty and this whole section
+        ' will effectively be skipped. "-1" ensures we don't catch the "." variable
+        ' name
+        
         Dim i As Integer
-        ' If on Mac and using external file, vars will be empty and this whole section will effectively be skipped
-        For i = 1 To vars.count
-            If vars(i) = "" Then
-                lbl_training_data.BackColor = RED
-                lbl_training_data.ControlTipText = BLANK_HEADER
-            ElseIf Not IsError(Application.Match(LCase(vars(i)), UNSUPPORTED_HEADERS, 0)) Then
-                lbl_training_data.BackColor = RED
-                lbl_training_data.ControlTipText = UNSUPPORTED_HEADER
+        For i = 1 To vars.count - 1
+            If InStr(1, vars(i), " ") <> 0 Then
+                header_errors.Add i & "`" & Replace(vars(i), "`", "") & "`" & SPACE_HEADER
+            ElseIf Not IsError(Application.Match(Trim(LCase(vars(i))), UNSUPPORTED_HEADERS, 0)) Then
+                header_errors.Add i & "`" & Replace(vars(i), "`", "") & "`" & RESERVED_HEADER
             ElseIf IsNumeric(Left(vars(i), 1)) Then
-                lbl_training_data.BackColor = RED
-                lbl_training_data.ControlTipText = UNSUPPORTED_HEADER
+                header_errors.Add i & "`" & Replace(vars(i), "`", "") & "`" & NUM_START_HEADER
+            ElseIf Not valid_var_chars(vars(i)) Then
+                header_errors.Add i & "`" & Replace(vars(i), "`", "") & "`" & INVALID_VAR_CHAR
             Else
-            ' Count number of times header appears
+                ' Count number of times header appears
                 Dim j As Integer, c As Integer
                 c = 0
                 For j = 1 To vars.count
                     If vars(i) = vars(j) Then c = c + 1
                 Next j
+                
                 If c > 1 Then
-                    lbl_training_data.BackColor = RED
-                    lbl_training_data.ControlTipText = DUPLICATE_HEADER
+                    header_errors.Add i & "`" & Replace(vars(i), "`", "") & "`" & DUPLICATE_HEADER
                 End If
             End If
         Next i
+        
+        If header_errors.count > 0 Then
+            lbl_training_data.Width = FORMULA_WIDTH_SMALL
+            lbl_training_data.BackColor = RED
+            
+            lbl_training_errors.BackColor = RED
+            lbl_training_errors.Visible = True
+            
+            pred_errors = True
+        End If
+        
     End If
     
     ' Check that evaluation and prediction data headers match training data
     If Left(lbl_training_data.tag, 5) <> "File:" Then
-        If lbl_evaluation_data.tag <> "" Then
+        If lbl_evaluation_data.tag <> "" And Left(lbl_evaluation_data.tag, 5) <> "File:" Then
             Dim eval_range As Range
             Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))
             c = 0
-            For i = 1 To eval_range.Columns.Count
-                For j = 1 To vars.Count
+            For i = 1 To eval_range.Columns.count
+                For j = 1 To vars.count
                     If eval_range(1, i) = vars(j) Then c = c + 1
                 Next j
             Next i
-            If c = 0 Or (eval_range.Columns.count <> vars.Count) Then
+            If c = 0 And (eval_range.Columns.count <> (vars.count - 1)) Then
                 lbl_evaluation_data.BackColor = RED
                 lbl_evaluation_data.ControlTipText = HEADERS_DONT_MATCH
+                pred_errors = True
             End If
         End If
         
-        If lbl_prediction_data.tag <> "" Then
+        If lbl_prediction_data.tag <> "" And Left(lbl_prediction_data.tag, 5) <> "File:" Then
             Dim pred_range As Range
             Set pred_range = Range(remove_workbook_from_range(lbl_prediction_data.tag))
             c = 0
-            For i = 1 To pred_range.Columns.Count
-                For j = 1 To vars.Count
-                    If eval_range(1, i) = vars(j) Then c = c + 1
+            For i = 1 To pred_range.Columns.count
+                For j = 1 To vars.count
+                    If pred_range(1, i) = vars(j) Then c = c + 1
                 Next j
             Next i
-            If c = 0 Or (pred_range.Columns.Count <> vars.Count) Then
+            If c = 0 And (pred_range.Columns.count <> (vars.count - 1)) Then
                 lbl_prediction_data.BackColor = RED
                 lbl_prediction_data.ControlTipText = HEADERS_DONT_MATCH
+                pred_errors = True
             End If
         End If
-    End If 
+    End If
     
     ' Check the formula and data
     Dim error_message As String
@@ -644,6 +733,9 @@ Private Sub validate_parameters()
     If error_message <> "" Then
         txt_formula.BackColor = RED
         txt_formula.ControlTipText = error_message
+        pred_errors = True
     End If
     
 End Sub
+
+
