@@ -147,6 +147,11 @@ Private Sub validate_parameters()
     Const NON_NUMERIC = "This parameter needs to be a number; please correct."
     Const FILE_NOT_EXIST = "This file might not exist. Feel free to run the add-in anyway and see if it works; sometimes Excel has trouble identifying files."
     Const DATA_NEEDED = "Please provide a file with text data."
+    Const FREQ_OUT_OF_RANGE = "This parameter needs to be a number between 0 and 1."
+    Const PERC_OUT_OF_RANGE = "This parameter is a percentage and needs to be between 0 and 100."
+    Const MIN_MAX_FLIPPED = "The maximum must be greater than the minimum."
+    Const TOPICS_BELOW_TWO = "This parameter must be greater than 2."
+    Const SEED_NOT_GIVEN = "A random seed is required when splitting the data into test/train."
     
     ' Clear all the entries
     txt_source_data.BackColor = WHITE
@@ -165,41 +170,77 @@ Private Sub validate_parameters()
     txt_max_lda_iter.ControlTipText = ""
     txt_seed.ControlTipText = ""
     
+    ' Start assuming everything is OK at a global level
+    text_errors = False
+    
     ' Check for numeric entries
     If (Not IsNumeric(txt_min_df.Text)) And txt_min_df.Text <> "" Then
         txt_min_df.BackColor = RED
         txt_min_df.ControlTipText = NON_NUMERIC
+        text_errors = True
+    ElseIf (txt_min_df.Text <> "") And (Trim(txt_min_df.Text) < 0 Or Trim(txt_min_df.Text) > 1) Then
+        txt_min_df.BackColor = RED
+        txt_min_df.ControlTipText = FREQ_OUT_OF_RANGE
+        text_errors = True
     End If
     
     If (Not IsNumeric(txt_max_df.Text)) And txt_max_df.Text <> "" Then
         txt_max_df.BackColor = RED
         txt_max_df.ControlTipText = NON_NUMERIC
+        text_errors = True
+    ElseIf (txt_max_df.Text <> "") And (Trim(txt_max_df.Text) < 0 Or Trim(txt_max_df.Text) > 1) Then
+        txt_max_df.BackColor = RED
+        txt_max_df.ControlTipText = FREQ_OUT_OF_RANGE
+        text_errors = True
+    ElseIf (txt_min_df.Text <> "") And (txt_max_df.Text <> "") Then
+        If Trim(txt_min_df.Text) > Trim(txt_max_df.Text) Then
+            txt_max_df.BackColor = RED
+            txt_max_df.ControlTipText = MIN_MAX_FLIPPED
+            text_errors = True
+        End If
     End If
     
     If (Not IsNumeric(txt_eval_perc.Text)) And txt_eval_perc.Text <> "" Then
         txt_eval_perc.BackColor = RED
         txt_eval_perc.ControlTipText = NON_NUMERIC
+        text_errors = True
+    ElseIf txt_eval_perc.Text <> "" And (Trim(txt_eval_perc.Text) < 0 Or Trim(txt_eval_perc.Text) > 100) Then
+        txt_eval_perc.BackColor = RED
+        txt_eval_perc.ControlTipText = PERC_OUT_OF_RANGE
+        text_errors = True
     End If
     
     If (Not IsNumeric(txt_lda_topics.Text)) And txt_lda_topics.Text <> "" Then
         txt_lda_topics.BackColor = RED
         txt_lda_topics.ControlTipText = NON_NUMERIC
+        text_errors = True
+    ElseIf txt_lda_topics.Text <> "" And (Trim(txt_lda_topics.Text) < 2) Then
+        txt_lda_topics.BackColor = RED
+        txt_lda_topics.ControlTipText = TOPICS_BELOW_TWO
+        text_errors = True
     End If
     
     If (Not IsNumeric(txt_max_lda_iter.Text)) And txt_max_lda_iter.Text <> "" Then
         txt_max_lda_iter.BackColor = RED
         txt_max_lda_iter.ControlTipText = NON_NUMERIC
+        text_errors = True
     End If
     
     If (Not IsNumeric(txt_seed.Text)) And txt_seed.Text <> "" Then
         txt_seed.BackColor = RED
         txt_seed.ControlTipText = NON_NUMERIC
+        text_errors = True
+    ElseIf txt_eval_perc.Text <> "" And txt_seed.Text = "" Then
+        txt_seed.BackColor = RED
+        txt_seed.ControlTipText = SEED_NOT_GIVEN
+        text_errors = True
     End If
     
     ' Ensure the file exists
     If txt_source_data.Text = "" Then
         txt_source_data.BackColor = RED
         txt_source_data.ControlTipText = DATA_NEEDED
+        text_errors = True
     Else:
         #If Mac Then
             DoEvents
@@ -207,9 +248,11 @@ Private Sub validate_parameters()
             If Not FileExists(get_full_file_name(txt_source_data.Text)) Then
                 txt_source_data.BackColor = RED
                 txt_source_data.ControlTipText = FILE_NOT_EXIST
+                text_errors = True
             End If
         #End If
     End If
 End Sub
+
 
 

@@ -150,6 +150,39 @@ Sub run_addin(f_name As String, this_status_cell As String)
         Exit Sub
     End If
     
+    ' Ensure there are no settings errors. First, load and unload each form to
+    ' check settings
+    
+    If f_name = "predictive_addin" Then
+        Load frm_pred
+        Sleep 100
+        Unload frm_pred
+    End If
+    
+    If f_name = "text_addin" Then
+        Load frm_text
+        Sleep 100
+        Unload frm_text
+    End If
+    
+    If (f_name = "predictive_addin" And pred_errors = True) Or (f_name = "text_addin" And text_errors = True) Then
+        Dim msg_res As Integer
+        msg_res = MsgBox("It looks like some of your settings contain errors. These will be highlighted in red in the " & _
+                           "settings dialogue when you click 'Edit Settings'." & vbCrLf & vbCrLf & "Would you like to run the add-in anyway? " & _
+                           "Click 'Yes' to run, and click 'No' to abort this run and launch the settings dialogue to see " & _
+                           "where the errors are.", vbYesNo + vbExclamation, "Settings errors")
+        
+        If msg_res = vbNo Then
+            If f_name = "predictive_addin" Then
+                frm_pred.Show False
+            Else
+                frm_text.Show False
+            End If
+            
+            Exit Sub
+        End If
+    End If
+    
     ' Generate a run ID
     run_id True, Asc(Mid(email_provided, 1, 1)) + Asc(Mid(email_provided, 2, 1))
     
@@ -416,3 +449,5 @@ end_format_sheet:
     ' Clean up
     Set sht = Nothing
 End Sub
+
+

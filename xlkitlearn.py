@@ -987,6 +987,10 @@ class AddinInstance:
             
             if 'latest_version' in req_res:
                 latest_version = req_res['latest_version']
+                
+                latest_version = latest_version.replace(',','.')
+                v_number = v_number.replace(',','.')
+                
                 try:
                     float_latest_version = float(latest_version)
                     float_v_number = float(v_number)

@@ -2,9 +2,12 @@ Option Explicit
 
 Public Sub Workbook_Open()
     If InStr(1, ThisWorkbook.Name, "DEBUG") > 0 Then
+        'We're deving. Show the code sheet
         PROD_VERSION = False
+        Sheet2.Visible = -1
     Else
         PROD_VERSION = True
+        Sheet2.Visible = 2
     End If
 
     ' Update the names in this workbook
