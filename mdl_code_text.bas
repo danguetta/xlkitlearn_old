@@ -1,3 +1,4 @@
+Attribute VB_Name = "mdl_code_text"
 Option Explicit
 
 Sub load_code()
@@ -79,8 +80,12 @@ Function output_files()
             Case vbext_ct_StdModule
                 FileName = FileName & ".bas"
             Case vbext_ct_Document
-                ' This is a worksheet or workbook object. Don't export
-                Export = False
+                If FileName = "Sheet1" Or FileName = "Sheet2" Or FileName = "ThisWorkbook" Then
+                    FileName = FileName & ".sht"
+                Else
+                    ' This is a worksheet or workbook object with no code. Don't export
+                    Export = False
+                End If
         End Select
         
         If Export Then
