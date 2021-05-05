@@ -42,13 +42,6 @@ Public Const RED = 12632319
 
 Public Const GRAPH_LINE_PER_INCH = 3
 
-' Import the ability to pause
-#If VBA7 Then ' Excel 2010 or later
-    Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal Milliseconds As LongPtr)
-#Else ' Excel 2007 or earlier
-    Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal Milliseconds As Long)
-#End If
-
 Public Sub prepare_for_prod()
     ThisWorkbook.Sheets("Add-in").Range("D9").Value = "{'model'|'Random forest'`'formula'|'median_property_value ~ crime_per_capita + prop_zoned_over_25k + prop_non_retail_acres + bounds_river + nox_concentration + av_rooms_per_dwelling + prop_owner_occupied_pre_1940 + dist_to_employment_ctr + highway_accessibility + tax_rate + pupil_teacher_ratio'`'param1'|'3 & 4 & 5 & 6'`'param2'|'25'`'param3'|''`'training_data'|'[xlkitlearn.xlsm]boston_housing!$A$1:$L$507'`'K'|'5'`'ts_data'|'False'`'evaluation_perc'|'30'`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
     ThisWorkbook.Sheets("Add-in").Range("D14").Value = ""

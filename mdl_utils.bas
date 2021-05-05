@@ -564,7 +564,7 @@ Public Function pad_string(s As String, tot_length As Integer)
     End If
 End Function
 
-Function valid_var_chars(strSource As String) As Boolean
+Public Function valid_var_chars(strSource As String) As Boolean
     valid_var_chars = True
 
     Dim i As Integer
@@ -579,3 +579,12 @@ Function valid_var_chars(strSource As String) As Boolean
     Next i
     
 End Function
+
+Public Sub pause_execution(s As Long)
+    Dim start_time As Long
+    start_time = Timer
+    
+    While Timer - start_time < s
+        DoEvents
+    Wend
+End Sub

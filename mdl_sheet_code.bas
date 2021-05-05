@@ -155,13 +155,13 @@ Sub run_addin(f_name As String, this_status_cell As String)
     
     If f_name = "predictive_addin" Then
         Load frm_pred
-        Sleep 100
+        pause_execution 0.1
         Unload frm_pred
     End If
     
     If f_name = "text_addin" Then
         Load frm_text
-        Sleep 100
+        pause_execution 0.1
         Unload frm_text
     End If
     
