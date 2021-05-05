@@ -1,4 +1,3 @@
-Attribute VB_Name = "mdl_code_text"
 Option Explicit
 
 Sub load_code()
