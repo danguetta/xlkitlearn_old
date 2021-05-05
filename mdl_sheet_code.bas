@@ -155,7 +155,7 @@ Sub run_addin(f_name As String, this_status_cell As String)
     
     If f_name = "predictive_addin" Then
         Load frm_pred
-        Sleep 100
+        Application.Wait 100
         Unload frm_pred
     End If
     
