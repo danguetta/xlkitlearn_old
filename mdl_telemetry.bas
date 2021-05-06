@@ -1,3 +1,4 @@
+Attribute VB_Name = "mdl_telemetry"
 Option Explicit
 
 Public Sub windows_curl(request As String)

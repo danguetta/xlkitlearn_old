@@ -1,3 +1,4 @@
+Attribute VB_Name = "mdl_utils"
 Option Explicit
 
 Public alternative_temp_folder As String

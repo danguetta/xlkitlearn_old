@@ -1,3 +1,18 @@
+VERSION 5.00
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frm_formula 
+   Caption         =   "Formula editor"
+   ClientHeight    =   6315
+   ClientLeft      =   45
+   ClientTop       =   390
+   ClientWidth     =   7890
+   OleObjectBlob   =   "frm_formula.frx":0000
+   StartUpPosition =   1  'CenterOwner
+End
+Attribute VB_Name = "frm_formula"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
 Dim autocomplete As Boolean
 
 Private Sub cmd_save_Click()

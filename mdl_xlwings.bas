@@ -1,3 +1,4 @@
+Attribute VB_Name = "mdl_xlwings"
 #Const App = "Microsoft Excel" 'Adjust when using outside of Excel
 'Version: 0.19.5
 

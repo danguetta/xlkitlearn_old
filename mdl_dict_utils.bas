@@ -1,3 +1,4 @@
+Attribute VB_Name = "mdl_dict_utils"
 
 Public Function dict_utils(ByVal dict_name As String, Optional ByVal Key As String = "XxXxXxXxXxXxX", Optional ByVal Value As String = "XxXxXxXxXxXxX", Optional ByVal reverse As Boolean = False, Optional ByVal error_on_missing_key As Boolean = True)
     ' This function takes a dictionary in one of the hidden names in

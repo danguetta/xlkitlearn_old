@@ -1,3 +1,18 @@
+VERSION 5.00
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frm_text 
+   Caption         =   "BA2 Text Mining Add-in"
+   ClientHeight    =   8775.001
+   ClientLeft      =   30
+   ClientTop       =   390
+   ClientWidth     =   6300
+   OleObjectBlob   =   "frm_text.frx":0000
+   StartUpPosition =   1  'CenterOwner
+End
+Attribute VB_Name = "frm_text"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
 Option Explicit
 
 Private Sub chk_sparse_output_Click()
