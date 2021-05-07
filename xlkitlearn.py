@@ -1842,21 +1842,29 @@ class Datasets:
             self._stored_formulas.append(formula)
             self._data[formula] = D()
 
+            # Figure out the outcome column
+            out_col = formula.split('~')[0].strip()
+            
+            # Check whether the outcome column has brackets and an equal sign
+            target_val = None
+            if '=' in out_col:
+                if out_col[0] == '(' and out_col[-1] == ')':
+                    out_col = out_col[1:-1]
+                
+                target_val = out_col.split('=')[1].strip()
+                out_col = out_col.split('=')[0].strip()
+                
+            if target_val is not None:
+	            def is_target_val(i):
+	                try:
+	                    if str(i) == target_val: return True
+	                    if i == int(i) and str(int(i)) == target_val: return True
+	                except:
+	                    return False
+                                    
             formula_no_space = ''.join([i for i in formula if i != ' '])
             if (formula_no_space[-1] == '.') or (formula_no_space[-3:] == '.-1'):
 
-                # Figure out the outcome column
-                out_col = formula.split('~')[0].strip()
-                
-                # Check whether the outcome column has brackets and an equal sign
-                target_val = None
-                if '=' in out_col:
-                    if out_col[0] == '(' and out_col[-1] == ')':
-                        out_col = out_col[1:-1]
-                    
-                    target_val = out_col.split('=')[1].strip()
-                    out_col = out_col.split('=')[0].strip()
-                
                 other_cols = [i for i in self._raw_data.training_data.columns if i != out_col]
 
                 # Get datasets
@@ -1872,14 +1880,6 @@ class Datasets:
                             self._out_err.add_error(f'It looks like {out_col} is not one of the columns in your '
                                                         'dataset, please double check.', critical=True)
                                                         
-                        if target_val is not None:
-                            def is_target_val(i):
-                                try:
-                                    if str(i) == target_val: return True
-                                    if i == int(i) and str(int(i)) == target_val: return True
-                                except:
-                                    return False
-                                    
                             self._data[formula][dataset_name].y = np.array([1 if is_target_val(i) else 0 for i in self._data[formula][dataset_name].y])
                             
                                                         
@@ -1905,10 +1905,28 @@ class Datasets:
                 # columns that will be used
                 if not self._check_headers(self._raw_data.training_data.columns):
                     self._out_err.finalize()
+                
+                if target_val is not None:
+                	# Create new binary version of output column and place it in formula string
+                    new_out_col = out_col + "_binary"
+                    new_formula = new_out_col + " ~ " + formula.split("~")[1].strip()
                     
+                    # Create new column and add to training data
+                    self._raw_data.training_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.training_data[out_col]]
+                    
+                    # Add binary column to evaluation and prediction data if necessary
+                    if self._raw_data.evaluation_data is not None:
+                        self._raw_data.evaluation_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.evaluation_data[out_col]]
+                    if self._raw_data.prediction_data is not None:
+                        self._raw_data.prediction_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.prediction_data[out_col]]
+                    
+                else:
+                    new_formula = formula
+                
                 # Process the training set using patsy
                 try:
-                    patsy_train = pt.dmatrices(formula, self._raw_data.training_data, NA_action='raise')
+                	# Use the new_formula to create matrices using patsy
+                    patsy_train = pt.dmatrices(new_formula, self._raw_data.training_data, NA_action='raise')
                     self._data[formula]['training_data'] = self._fix_design_matrix(patsy_train)
                     self._set_binary(self._data[formula].training_data.y)
                 except pt.PatsyError as e:
