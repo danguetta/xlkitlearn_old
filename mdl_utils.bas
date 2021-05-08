@@ -446,6 +446,13 @@ Public Function validate_formula(formula_text As String) As String
         formula_parts(0) = Split(formula_parts(0), ")")(0)
         formula_parts(0) = Split(formula_parts(0), "(")(UBound(Split(formula_parts(0), "(")))
         
+        Dim equals_sign As Boolean
+        If InStr(formula_parts(0), "=") > 0 Then
+            equals_sign = True
+        ElseIf InStr(formula_parts(0), "=") = 0 Then
+            equals_sign = False
+        End If
+        
         If vars.count > 0 And variable_valid(formula_parts(0)) = "" Then
             invalid_terms.Add (Trim(formula_parts(0)))
         End If
@@ -462,14 +469,14 @@ Public Function validate_formula(formula_text As String) As String
                 If var_types.Item(w) <> "numeric" Then
                     all_numeric = False
                 End If
-            
+                
                 If vars.Item(w) = formula_parts(0) Then
                     If var_types.Item(w) = "missing" Then
                         validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
                                                "has missing values in some rows"
                         Exit Function
                         
-                    ElseIf var_types.Item(w) = "string" Then
+                    ElseIf var_types.Item(w) = "string" And Not equals_sign Then
                         validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
                                                "has non-numeric values in some rows"
                         Exit Function
