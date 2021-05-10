@@ -3603,29 +3603,33 @@ class PredictiveCode:
                 o +=               ''                                                                                  +'\n'
                 
                 dot_translato=''
+                y_eq_translato=''
                 
                 if self._eq_y_value:
-                    dot_translato  +=  '    # We have a y-value of the form column=value. Let\'s create the corresponding' +'\n'
-                    dot_translato  +=  '    # binary column.'                                                              +'\n'
-                    dot_translato  +=  '    if "=" in formula.split("~")[0]:'                                              +'\n'
-                    dot_translato  +=  '        y_part = formula.split("~")[0].replace("(", "").replace(")", "")'          +'\n'
-                    dot_translato  +=  '        y_col = y_part.split("=")[0].strip()'                                      +'\n'
-                    dot_translato  +=  '        target_val = y_part.split("=")[1].strip()'                                 +'\n'
-                    dot_translato  +=  ''                                                                                  +'\n'
-                    dot_translato  +=  '        def is_target_val(i):'                                                     +'\n'
-                    dot_translato  +=  '            try:'                                                                  +'\n'
-                    dot_translato  +=  '                if str(i) == target_val: return 1'                                 +'\n'
-                    dot_translato  +=  '                if i == int(i) and str(int(i)) == target_val: return 1'            +'\n'
-                    dot_translato  +=  '            except:'                                                               +'\n'
-                    dot_translato  +=  '                return 0'                                                          +'\n'
-                    dot_translato  +=  ''                                                                                  +'\n'
-                    dot_translato  +=  '        for this_set in datasets:'                                                 +'\n'
-                    dot_translato  +=  '            if y_col in datasets[this_set]:'                                       +'\n'
-                    dot_translato  +=  '                datasets[this_set] = datasets[this_set].copy().assign('            +'\n'
-                    dot_translato  +=  '                               **{y_col: lambda x: x[y_col].apply(is_target_val)})'+'\n'
-                    dot_translato  +=  ''                                                                                  +'\n'
-                    dot_translato  +=  '        formula = y_col + "~" + formula.split("~")[1]'                             +'\n'
-                    dot_translato  +=  ''                                                                                  +'\n'
+                    y_eq_translato  +=  '    # We have a y-value of the form column=value. Let\'s create the corresponding' +'\n'
+                    y_eq_translato  +=  '    # binary column.'                                                              +'\n'
+                    y_eq_translato  +=  '    if "=" in formula.split("~")[0]:'                                              +'\n'
+                    y_eq_translato  +=  '        y_part = formula.split("~")[0].replace("(", "").replace(")", "")'          +'\n'
+                    y_eq_translato  +=  '        y_col = y_part.split("=")[0].strip()'                                      +'\n'
+                    y_eq_translato  +=  '        target_val = y_part.split("=")[1].strip()'                                 +'\n'
+                    y_eq_translato  +=  ''                                                                                  +'\n'
+                    y_eq_translato  +=  '        def is_target_val(i):'                                                     +'\n'
+                    y_eq_translato  +=  '            try:'                                                                  +'\n'
+                    y_eq_translato  +=  '                if str(i) == target_val: return 1'                                 +'\n'
+                    y_eq_translato  +=  '                if i == int(i) and str(int(i)) == target_val: return 1'            +'\n'
+                    y_eq_translato  +=  '            except:'                                                               +'\n'
+                    y_eq_translato  +=  '                return 0'                                                          +'\n'
+                    y_eq_translato  +=  ''                                                                                  +'\n'
+                    y_eq_translato  +=  '        for this_set in datasets:'                                                 +'\n'
+                    y_eq_translato  +=  '            if y_col in datasets[this_set]:'                                       +'\n'
+                    y_eq_translato  +=  '                datasets[this_set] = datasets[this_set].copy().assign('            +'\n'
+                    y_eq_translato  +=  '                               **{y_col: lambda x: x[y_col].apply(is_target_val)})'+'\n'
+                    y_eq_translato  +=  ''                                                                                  +'\n'
+                    y_eq_translato  +=  '        formula = y_col + "~" + formula.split("~")[1]'                             +'\n'
+                    y_eq_translato  +=  ''                                                                                  +'\n'
+
+                if self._dot_formula:
+                	dot_translato += y_eq_translato
 
                 dot_translato  +=  '    # We have a formula of the form y~., which means we want to include every'     +'\n'
                 dot_translato  +=  '    # column. Unfortunately, patsy cannot handle these kinds of formulas, so'      +'\n'
@@ -3730,6 +3734,8 @@ class PredictiveCode:
                     o +=           dot_translato                                                                       +'\n'
                 else:
                     self._import_statements.append('import patsy as pt')
+                    if self._eq_y_value:
+                    	o += 	   y_eq_translato
                     o +=           patsy_translator                                                                    +'\n'
                     self._import_statements.append('import numpy as np')
                 o +=                    ''                                                                             +'\n'
@@ -3869,7 +3875,30 @@ class PredictiveCode:
                 o +=               '                        exog=datasets["training_data"]["X"])'                      +'\n'
             else:
                 self._import_statements.append('import statsmodels.formula.api as sm')
-                o +=              f'final_model = sm.{fun}(formula="{self._formula[0]}",'                              +'\n'
+                if self._eq_y_value:
+                    o  +=  				'# We have a y-value of the form column=value. Let\'s create the corresponding' +'\n'
+                    o  +=  				'# binary column.'                                                              +'\n'
+                    o  +=			   f'formula = "{self._formula[0]}"'												+'\n'
+                    o  +=  				'y_part = formula.split("~")[0].replace("(", "").replace(")", "")'              +'\n'
+                    o  +=  				'y_col = y_part.split("=")[0].strip()'                                          +'\n'
+                    o  +=  				'target_val = y_part.split("=")[1].strip()'                                     +'\n'
+                    o  +=  				''                                                                              +'\n'
+                    o  +=  				'def is_target_val(i):'                                                         +'\n'
+                    o  +=  				'    try:'                                                                      +'\n'
+                    o  +=  				'        if str(i) == target_val: return 1'                                     +'\n'
+                    o  +=  				'        if i == int(i) and str(int(i)) == target_val: return 1'                +'\n'
+                    o  +=  				'    except:'                                                                   +'\n'
+                    o  +=  				'        return 0'                                                              +'\n'
+                    o  +=  				''                                                                              +'\n'
+                    o  +=  				'for this_set in datasets:'                                                     +'\n'
+                    o  +=  				'    if y_col in datasets[this_set]:'                                           +'\n'
+                    o  +=  				'        datasets[this_set] = datasets[this_set].copy().assign('                +'\n'
+                    o  +=  				'                       **{y_col: lambda x: x[y_col].apply(is_target_val)})'    +'\n'
+                    o  +=  				''                                                                              +'\n'
+                    o  +=  				'formula = y_col + "~" + formula.split("~")[1]'                                 +'\n'
+                    o  +=  				''                                                                              +'\n'
+                
+                o +=              f'final_model = sm.{fun}(formula=formula,'                                           +'\n'
                 o +=               '                             data=datasets["training_data"])'                      +'\n'
             o +=                   ''                                                                                  +'\n'
         
@@ -4204,8 +4233,11 @@ class PredictiveCode:
         o +=                       '# Make predictions for the evaluation set'                                         +'\n'
         
         if self._simple_regression and (not self._dot_formula):
-            # We used the dataframe as-is, so extract the y-value
-            o +=                  f'y_true = datasets["evaluation_data"]["{self._formula[0].split("~")[0].strip()}"]'  +'\n'
+            if self._eq_y_value:
+                o +=                  f'y_true = datasets["evaluation_data"][y_col]'                                   +'\n'
+            else:
+                # We used the dataframe as-is, so extract the y-value
+                o +=                  f'y_true = datasets["evaluation_data"]["{self._formula[0].split("~")[0].strip()}"]'  +'\n'
         else:
             # We used our formula builder
             o +=                   'y_true = datasets["evaluation_data"]["y"]'                                         +'\n'
