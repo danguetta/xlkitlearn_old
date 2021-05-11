@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.20                 #
+#  Version 10.21                 #
 ##################################
 
 # =====================
@@ -1838,20 +1838,22 @@ class Datasets:
         self._current_formula = formula
 
         if formula not in self._data:
-            is_first_formula = (len(self._data) == 0)
-        
-            self._stored_formulas.append(formula)
-            self._data[formula] = D()
-
             formula_no_space = ''.join([i for i in formula if i != ' '])
 
             # Figure out the outcome column
-            out_col = formula.split('~')[0].strip()
+            out_col = formula_no_space.split('~')[0].strip()
             
             # Ensure the outcome column is the same as previous ones, if this is not the first
             # formula
-            if (len(self._data) > 0) and (out_col != ''.join([i for i in list(self._data.keys())[0].split('~')[0] if i != ''])):
-                self._out_err.add_error('When entering multiple formulas, every formula must use the SAME outcome variable.', critical=True)
+            if (len(self._data) > 0):
+                existing_out_col = ''.join([i for i in list(self._data.keys())[0].split('~')[0] if i != ' ']).strip()
+                if (out_col != existing_out_col):
+                    self._out_err.add_error('When entering multiple formulas, every formula must use the SAME outcome variable.', critical=True)
+
+            # Add an entry to the data dictionary
+            is_first_formula = (len(self._data) == 0)
+            self._stored_formulas.append(formula)
+            self._data[formula] = D()
 
             # Check whether the outcome column has brackets and an equal sign.
             if ('=' in out_col):
