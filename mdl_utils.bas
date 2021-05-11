@@ -429,6 +429,10 @@ Public Function validate_formula(formula_text As String) As String
     Dim formula_parts As Variant
     Dim invalid_terms As New Collection
     
+    ' Keep track of the outcome column in our formulas; we want to ensure there's
+    ' only one outcome variable in all our formulas
+    Dim outcome_col As String
+    
     For i = 0 To UBound(single_formulas)
         If Trim(single_formulas(i)) = "" Then
             validate_formula = "Please complete your formula."
@@ -443,33 +447,51 @@ Public Function validate_formula(formula_text As String) As String
             Exit Function
         End If
         
+        If (outcome_col <> "") And (outcome_col <> Replace(formula_parts(0), " ", "")) Then
+            validate_formula = "When you enter multiple formulas, the outcome variable to the left of ~ must " & _
+                                    "be the same for all formulas. K-fold cross validation wouldn't really make " & _
+                                    "sense otherwise."
+            Exit Function
+        End If
+        outcome_col = Replace(formula_parts(0), " ", "")
+        
+        ' Remove parentheses from around the y part of the formula
         formula_parts(0) = Split(formula_parts(0), ")")(0)
         formula_parts(0) = Split(formula_parts(0), "(")(UBound(Split(formula_parts(0), "(")))
+        
+        Dim equals_sign As Boolean
+        equals_sign = False
+        If InStr(formula_parts(0), "=") > 0 Then
+            equals_sign = True
+            
+            ' Only keep the variable names
+            formula_parts(0) = Trim(Split(formula_parts(0), "=")(0))
+        End If
         
         If vars.count > 0 And variable_valid(formula_parts(0)) = "" Then
             invalid_terms.Add (Trim(formula_parts(0)))
         End If
         
         ' If we've checked the numerical status of our columns, make sure the output
-        ' (y) column is numeric. If something like (var=1) is used in the output,
-        ' we won't match any entry in vars, so this won't bite
+        ' (y) column is numeric. Also keep track of whether the rest of the columns are
+        ' numeric so we can check whether a dot formula is appropriate later
         If var_types.count > 0 Then
             Dim all_numeric As Boolean
             all_numeric = True
         
             Dim w As Integer
             For w = 1 To var_types.count
-                If var_types.Item(w) <> "numeric" Then
+                If (var_types.Item(w) <> "numeric") And (Not (vars.Item(w) = formula_parts(0) And equals_sign)) Then
                     all_numeric = False
                 End If
-            
+                
                 If vars.Item(w) = formula_parts(0) Then
                     If var_types.Item(w) = "missing" Then
                         validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
                                                "has missing values in some rows"
                         Exit Function
                         
-                    ElseIf var_types.Item(w) = "string" Then
+                    ElseIf var_types.Item(w) = "string" And (Not equals_sign) Then
                         validate_formula = "You are using " & formula_parts(0) & " as an output variable, but that column " & _
                                                "has non-numeric values in some rows"
                         Exit Function

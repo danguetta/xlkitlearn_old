@@ -568,13 +568,13 @@ Private Sub validate_parameters()
                 Dim count As Integer
                 ' Find the number of terms separated by a "+" in the formula
                 count = UBound(Split(txt_formula.Text, "+")) + 1
-                If count >= 10 Then
+                If count > 10 Then
                     txt_formula.BackColor = RED
                     txt_formula.ControlTipText = BS_GT10_VARS
                     pred_errors = True
                 End If
             Else
-                If vars.count >= 10 Then
+                If vars.count > 10 Then
                     txt_formula.BackColor = RED
                     txt_formula.ControlTipText = BS_GT10_VARS
                     pred_errors = True

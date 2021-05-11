@@ -7,8 +7,8 @@ Sub load_code()
     Application.Calculation = xlCalculationManual
     
     ' Read the code from the xlkitlearn.py file
-    If FileExists(ThisWorkbook.Path & "\xlkitlearn.py") Then
-        Open ThisWorkbook.Path & "\xlkitlearn.py" For Input As #1
+    If FileExists(ThisWorkbook.Path & "/xlkitlearn.py") Then
+        Open ThisWorkbook.Path & "/xlkitlearn.py" For Input As #1
     Else
         MsgBox "Could not find code file xlkitlearn.py.", vbCritical
         Exit Sub
