@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.19                 #
+#  Version 10.20                 #
 ##################################
 
 # =====================
@@ -1832,39 +1832,68 @@ class Datasets:
         return ':'.join(out)
 
     def set_formula(self, formula):
-        
         if self.is_sparse:
             self._set_outcome(formula)
         
         self._current_formula = formula
 
         if formula not in self._data:
+            is_first_formula = (len(self._data) == 0)
+        
             self._stored_formulas.append(formula)
             self._data[formula] = D()
+
+            formula_no_space = ''.join([i for i in formula if i != ' '])
 
             # Figure out the outcome column
             out_col = formula.split('~')[0].strip()
             
-            # Check whether the outcome column has brackets and an equal sign
-            target_val = None
-            if '=' in out_col:
+            # Ensure the outcome column is the same as previous ones, if this is not the first
+            # formula
+            if (len(self._data) > 0) and (out_col != ''.join([i for i in list(self._data.keys())[0].split('~')[0] if i != ''])):
+                self._out_err.add_error('When entering multiple formulas, every formula must use the SAME outcome variable.', critical=True)
+
+            # Check whether the outcome column has brackets and an equal sign.
+            if ('=' in out_col):
                 if out_col[0] == '(' and out_col[-1] == ')':
                     out_col = out_col[1:-1]
                 
                 target_val = out_col.split('=')[1].strip()
                 out_col = out_col.split('=')[0].strip()
                 
-            if target_val is not None:
-	            def is_target_val(i):
-	                try:
-	                    if str(i) == target_val: return True
-	                    if i == int(i) and str(int(i)) == target_val: return True
-	                except:
-	                    return False
-                                    
-            formula_no_space = ''.join([i for i in formula if i != ' '])
+                # If this is our first formula, modify the outcome column
+                if is_first_formula:
+                    def is_target_val(i):
+                        try:
+                            if str(i) == target_val: return True
+                            if i == int(i) and str(int(i)) == target_val: return True
+                        except:
+                            return False
+                            
+                    # Modify the data to reflect the new target column; because we insist
+                    # all formulas have the same outcome, this won't cause trouble anywhere
+                    # else
+                    self._raw_data.training_data[out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.training_data[out_col]]
+                    
+                    # Ensure we don't have all zeroes
+                    if self._raw_data.training_data[out_col].sum() == 0:
+                        self._out_err.add_error('You are asking xlkitlearn to fit a binary prediction model to predict whether column '
+                                                    f'{out_col} is equal to {target_val}, but not a single one of the values in that '
+                                                     'column is equal to that! Please check...', critical=True)
+                    
+                    # Modify evaluation and prediction data if necessary
+                    if self._raw_data.evaluation_data is not None:
+                        self._raw_data.evaluation_data[out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.evaluation_data[out_col]]
+                    if self._raw_data.prediction_data is not None:
+                        self._raw_data.prediction_data[out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.prediction_data[out_col]]
+                    
+                    
+                # Create an internal version of this formula for processing purposes that
+                # includes the column name itself [i.e., y instead of (y=1)]. Note that
+                # out_col is already updated above
+                formula_no_space = out_col + '~' + formula_no_space.split('~')[1]
+                
             if (formula_no_space[-1] == '.') or (formula_no_space[-3:] == '.-1'):
-
                 other_cols = [i for i in self._raw_data.training_data.columns if i != out_col]
 
                 # Get datasets
@@ -1879,10 +1908,7 @@ class Datasets:
                         except KeyError:
                             self._out_err.add_error(f'It looks like {out_col} is not one of the columns in your '
                                                         'dataset, please double check.', critical=True)
-                                                        
-                            self._data[formula][dataset_name].y = np.array([1 if is_target_val(i) else 0 for i in self._data[formula][dataset_name].y])
-                            
-                                                        
+                        
                         self._set_binary(self._data[formula][dataset_name].y)
                         
                 if self._raw_data.prediction_data is not None:
@@ -1906,27 +1932,9 @@ class Datasets:
                 if not self._check_headers(self._raw_data.training_data.columns):
                     self._out_err.finalize()
                 
-                if target_val is not None:
-                	# Create new binary version of output column and place it in formula string
-                    new_out_col = out_col + "_binary"
-                    new_formula = new_out_col + " ~ " + formula.split("~")[1].strip()
-                    
-                    # Create new column and add to training data
-                    self._raw_data.training_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.training_data[out_col]]
-                    
-                    # Add binary column to evaluation and prediction data if necessary
-                    if self._raw_data.evaluation_data is not None:
-                        self._raw_data.evaluation_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.evaluation_data[out_col]]
-                    if self._raw_data.prediction_data is not None:
-                        self._raw_data.prediction_data[new_out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.prediction_data[out_col]]
-                    
-                else:
-                    new_formula = formula
-                
                 # Process the training set using patsy
                 try:
-                	# Use the new_formula to create matrices using patsy
-                    patsy_train = pt.dmatrices(new_formula, self._raw_data.training_data, NA_action='raise')
+                    patsy_train = pt.dmatrices(formula_no_space, self._raw_data.training_data, NA_action='raise')
                     self._data[formula]['training_data'] = self._fix_design_matrix(patsy_train)
                     self._set_binary(self._data[formula].training_data.y)
                 except pt.PatsyError as e:
@@ -3465,6 +3473,13 @@ class PredictiveCode:
                 
                 if '=' in i.split('~')[0]:
                     self._eq_y_value = True
+                    
+                    lhs = i.split('~')[0].strip()
+                    if (lhs[0] == '(') and (lhs[-1] == ')'):
+                        lhs = lhs[1:-1]
+                    
+                    self._eq_y_var = lhs.split('=')[0].strip()
+                    self._eq_target_val = lhs.split('=')[1].strip()
             
         self._formula = addin.formula
         
@@ -3536,6 +3551,28 @@ class PredictiveCode:
                 o +=               self._get_load_dataset_code('raw_datasets["prediction_data"]', self._prediction_file)
                 o +=               ''                                                                                  +'\n'
             
+            # If we have a formula with a (y=...)~ outcome, convert the relevant column
+            if self._eq_y_value:
+                o +=                                                                                                    '\n'
+                o +=               '# Our outcome variable is of the form (y=...). We need to edit the outcome column' +'\n'
+                o +=               '# to make it binary.'                                                              +'\n'
+                o +=              f'y_col = "{self._eq_y_var}"'                                                        +'\n'
+                o +=              f'target_val = "{self._eq_target_val}"'                                              +'\n'
+                o +=                                                                                                    '\n'
+                o +=               'def is_target_val(i):'                                                             +'\n'
+                o +=               '    try:'                                                                          +'\n'
+                o +=               '        if str(i) == target_val: return 1'                                         +'\n'
+                o +=               '        if i == int(i) and str(int(i)) == target_val: return 1'                    +'\n'
+                o +=               '    except:'                                                                       +'\n'
+                o +=               '        return 0'                                                                  +'\n'
+                o +=               ''                                                                                  +'\n'
+                o +=                                                                                                    '\n'      
+                o +=               'for this_set in raw_datasets:'                                                     +'\n'
+                o +=               '    if y_col in raw_datasets[this_set]:'                                           +'\n'
+                o +=               '        raw_datasets[this_set][y_col] = (raw_datasets[this_set][y_col]'            +'\n'
+                o +=               '                                                    .apply(is_target_val))'        +'\n'
+                o +=                                                                                                    '\n'
+                
             if self._evaluation_split:
                 self._import_statements.append('import sklearn.model_selection as sk_ms')
                 o +=               '# Split the training dataset into a training and evaluation set. We use the'       +'\n'
@@ -3603,33 +3640,6 @@ class PredictiveCode:
                 o +=               ''                                                                                  +'\n'
                 
                 dot_translato=''
-                y_eq_translato=''
-                
-                if self._eq_y_value:
-                    y_eq_translato  +=  '    # We have a y-value of the form column=value. Let\'s create the corresponding' +'\n'
-                    y_eq_translato  +=  '    # binary column.'                                                              +'\n'
-                    y_eq_translato  +=  '    if "=" in formula.split("~")[0]:'                                              +'\n'
-                    y_eq_translato  +=  '        y_part = formula.split("~")[0].replace("(", "").replace(")", "")'          +'\n'
-                    y_eq_translato  +=  '        y_col = y_part.split("=")[0].strip()'                                      +'\n'
-                    y_eq_translato  +=  '        target_val = y_part.split("=")[1].strip()'                                 +'\n'
-                    y_eq_translato  +=  ''                                                                                  +'\n'
-                    y_eq_translato  +=  '        def is_target_val(i):'                                                     +'\n'
-                    y_eq_translato  +=  '            try:'                                                                  +'\n'
-                    y_eq_translato  +=  '                if str(i) == target_val: return 1'                                 +'\n'
-                    y_eq_translato  +=  '                if i == int(i) and str(int(i)) == target_val: return 1'            +'\n'
-                    y_eq_translato  +=  '            except:'                                                               +'\n'
-                    y_eq_translato  +=  '                return 0'                                                          +'\n'
-                    y_eq_translato  +=  ''                                                                                  +'\n'
-                    y_eq_translato  +=  '        for this_set in datasets:'                                                 +'\n'
-                    y_eq_translato  +=  '            if y_col in datasets[this_set]:'                                       +'\n'
-                    y_eq_translato  +=  '                datasets[this_set] = datasets[this_set].copy().assign('            +'\n'
-                    y_eq_translato  +=  '                               **{y_col: lambda x: x[y_col].apply(is_target_val)})'+'\n'
-                    y_eq_translato  +=  ''                                                                                  +'\n'
-                    y_eq_translato  +=  '        formula = y_col + "~" + formula.split("~")[1]'                             +'\n'
-                    y_eq_translato  +=  ''                                                                                  +'\n'
-
-                if self._dot_formula:
-                	dot_translato += y_eq_translato
 
                 dot_translato  +=  '    # We have a formula of the form y~., which means we want to include every'     +'\n'
                 dot_translato  +=  '    # column. Unfortunately, patsy cannot handle these kinds of formulas, so'      +'\n'
@@ -3723,21 +3733,28 @@ class PredictiveCode:
                 patsy_translator +='    # Keep track of the column names (without the intercept)'                      +'\n'
                 patsy_translator +='    output_data["columns"] = [i for i in cols if i != "Intercept"]'                +'\n'
                 
-                if self._dot_formula and self._non_dot_formula:
+                if self._non_dot_formula:
+                    # If we have a non-dot formula, we'll need Patsy and numpy
                     self._import_statements.append('import patsy as pt')
+                    self._import_statements.append('import numpy as np')
+                
+                if self._eq_y_value:
+                    o +=           '    if "=" in formula.split("~")[0]:'                                              +'\n'
+                    o +=           '        y_col = formula.split("~")[0].split("=")[0].strip()'                       +'\n'
+                    o +=           '        formula = y_col + "~" + formula.split("~")[1]'                             +'\n'
+                    o +=                                                                                                '\n'
+                
+                if self._dot_formula and self._non_dot_formula:
+                    # We have both dot and and non-dot formulas; use the right translator
                     o +=           '    if formula.replace(" ", "").split("~")[1] in [".", ".-1"]:'                    +'\n'
                     o +=           '\n'.join(['    ' + i for i in dot_translato.split('\n')])                          +'\n'
                     o +=           '    else:'                                                                         +'\n'
                     o +=           '\n'.join(['    ' + i for i in patsy_translator.split('\n')])                       +'\n'
-                    self._import_statements.append('import numpy as np')
                 elif self._dot_formula:
                     o +=           dot_translato                                                                       +'\n'
                 else:
-                    self._import_statements.append('import patsy as pt')
-                    if self._eq_y_value:
-                    	o += 	   y_eq_translato
                     o +=           patsy_translator                                                                    +'\n'
-                    self._import_statements.append('import numpy as np')
+                    
                 o +=                    ''                                                                             +'\n'
                 o +=                    '    return output_data'                                                       +'\n'
                 
@@ -3876,27 +3893,27 @@ class PredictiveCode:
             else:
                 self._import_statements.append('import statsmodels.formula.api as sm')
                 if self._eq_y_value:
-                    o  +=  				'# We have a y-value of the form column=value. Let\'s create the corresponding' +'\n'
-                    o  +=  				'# binary column.'                                                              +'\n'
-                    o  +=			   f'formula = "{self._formula[0]}"'												+'\n'
-                    o  +=  				'y_part = formula.split("~")[0].replace("(", "").replace(")", "")'              +'\n'
-                    o  +=  				'y_col = y_part.split("=")[0].strip()'                                          +'\n'
-                    o  +=  				'target_val = y_part.split("=")[1].strip()'                                     +'\n'
-                    o  +=  				''                                                                              +'\n'
-                    o  +=  				'def is_target_val(i):'                                                         +'\n'
-                    o  +=  				'    try:'                                                                      +'\n'
-                    o  +=  				'        if str(i) == target_val: return 1'                                     +'\n'
-                    o  +=  				'        if i == int(i) and str(int(i)) == target_val: return 1'                +'\n'
-                    o  +=  				'    except:'                                                                   +'\n'
-                    o  +=  				'        return 0'                                                              +'\n'
-                    o  +=  				''                                                                              +'\n'
-                    o  +=  				'for this_set in datasets:'                                                     +'\n'
-                    o  +=  				'    if y_col in datasets[this_set]:'                                           +'\n'
-                    o  +=  				'        datasets[this_set] = datasets[this_set].copy().assign('                +'\n'
-                    o  +=  				'                       **{y_col: lambda x: x[y_col].apply(is_target_val)})'    +'\n'
-                    o  +=  				''                                                                              +'\n'
-                    o  +=  				'formula = y_col + "~" + formula.split("~")[1]'                                 +'\n'
-                    o  +=  				''                                                                              +'\n'
+                    o  +=          '# We have a y-value of the form column=value. Let\'s create the corresponding'     +'\n'
+                    o  +=          '# binary column.'                                                                  +'\n'
+                    o  +=         f'formula = "{self._formula[0]}"'                                                    +'\n'
+                    o  +=          'y_part = formula.split("~")[0].replace("(", "").replace(")", "")'                  +'\n'
+                    o  +=          'y_col = y_part.split("=")[0].strip()'                                              +'\n'
+                    o  +=          'target_val = y_part.split("=")[1].strip()'                                         +'\n'
+                    o  +=          ''                                                                                  +'\n'
+                    o  +=          'def is_target_val(i):'                                                             +'\n'
+                    o  +=          '    try:'                                                                          +'\n'
+                    o  +=          '        if str(i) == target_val: return 1'                                         +'\n'
+                    o  +=          '        if i == int(i) and str(int(i)) == target_val: return 1'                    +'\n'
+                    o  +=          '    except:'                                                                       +'\n'
+                    o  +=          '        return 0'                                                                  +'\n'
+                    o  +=          ''                                                                                  +'\n'
+                    o  +=          'for this_set in datasets:'                                                         +'\n'
+                    o  +=          '    if y_col in datasets[this_set]:'                                               +'\n'
+                    o  +=          '        datasets[this_set] = datasets[this_set].copy().assign('                    +'\n'
+                    o  +=          '                       **{y_col: lambda x: x[y_col].apply(is_target_val)})'        +'\n'
+                    o  +=          ''                                                                                  +'\n'
+                    o  +=          'formula = y_col + "~" + formula.split("~")[1]'                                     +'\n'
+                    o  +=          ''                                                                                  +'\n'
                 
                 o +=              f'final_model = sm.{fun}(formula=formula,'                                           +'\n'
                 o +=               '                             data=datasets["training_data"])'                      +'\n'
