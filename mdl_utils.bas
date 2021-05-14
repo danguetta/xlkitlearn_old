@@ -33,13 +33,13 @@ Public Sub resolve_workbook_path()
     #If Mac Then
         ' If we have a mac, we don't want to trigger multiple file permission questions
         ' so don't check
-        ThisWorkbook.Sheets("code_text").Range("D1") = ThisWorkbook.Path
+        ThisWorkbook.Sheets("code_text").range("D1") = ThisWorkbook.Path
         GoTo check_for_quotes
     #End If
     
     If FileExists(ThisWorkbook.FullName) Then
         ' Everything's normal, we're good to go
-        ThisWorkbook.Sheets("code_text").Range("D1") = ThisWorkbook.Path
+        ThisWorkbook.Sheets("code_text").range("D1") = ThisWorkbook.Path
         GoTo check_for_quotes
     End If
         
@@ -125,7 +125,7 @@ Public Sub resolve_workbook_path()
     Next i_parsing
         
     If total_found = 1 Then
-        ThisWorkbook.Sheets("code_text").Range("D1") = found_path
+        ThisWorkbook.Sheets("code_text").range("D1") = found_path
         GoTo check_for_quotes
     Else
     
@@ -143,7 +143,7 @@ cant_resolve:
     
 check_for_quotes:
     Dim full_path As String
-    full_path = ThisWorkbook.Sheets("code_text").Range("D1")
+    full_path = ThisWorkbook.Sheets("code_text").range("D1")
     #If Mac Then
         full_path = full_path & "/"
     #Else
@@ -161,9 +161,9 @@ End Sub
 
 Public Function get_full_file_name(file_name) As String
     #If Mac Then
-        get_full_file_name = ThisWorkbook.Sheets("code_text").Range("D1") & "/" & file_name
+        get_full_file_name = ThisWorkbook.Sheets("code_text").range("D1") & "/" & file_name
     #Else
-        get_full_file_name = ThisWorkbook.Sheets("code_text").Range("D1") & "\" & file_name
+        get_full_file_name = ThisWorkbook.Sheets("code_text").range("D1") & "\" & file_name
     #End If
 End Function
 
@@ -211,61 +211,80 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
             dialogue_output = trim_ends(dialogue_output)
         End If
         
-        ' Check whether the input is a file. Because of various complications (OneDrive, Mac sandbox, etc...),
-        ' we do this in the least restrictive way possible - by checking whether the file has a .csv or .xlsx
-        ' or .xls extension (those are the ones accepted by the add-in)
-        If accept_file_name And (Right(dialogue_output, 4) = ".csv" Or _
-                                    Right(dialogue_output, 4) = ".xls" Or _
-                                        Right(dialogue_output, 5) = ".xlsx") Then
-            get_range = "File: " & dialogue_output
-            Exit Function
-        End If
+        Dim dataset_error As String
+        dataset_error = validate_dataset(dialogue_output, force_contiguous, accept_file_name)
         
-        ' Check whether it's contiguous by checking whether there is a comma
-        ' in the range
-        If force_contiguous Then
-            If InStr(1, dialogue_output, ",") > 0 Then
-                MsgBox "Please select a contiguous range.", vbExclamation
-                get_range = ""
-                Exit Function
-            End If
+        If (Not dataset_error = "True") Then
+            MsgBox dataset_error, vbExclamation
         End If
-        
-        ' If this cell reference doesn't contain a sheet, add it
-        If InStr(1, dialogue_output, "!") = 0 Then
-            dialogue_output = "[" & ActiveWorkbook.Name & "]" & ActiveWorkbook.ActiveSheet.Name & "!" & dialogue_output
-        End If
-        
-        ' Ensure this is a valid range
-        If check_valid_range(dialogue_output) = False Then
-            If accept_file_name Then
-                Dim accepted_files As Variant
-                accepted_files = Array("xls", "xlsx", "csv")
-                If InStr(Right(dialogue_output, 6), ".") And IsError(Application.Match(Split(dialogue_output, ".")(1), accepted_files, 0)) Then
-                    MsgBox "XLKitLearn can only accept xls, xlsx, and csv files.", vbExclamation
-                Else
-                    MsgBox "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet.", vbExclamation
-                End If
-            Else
-                MsgBox "Please enter a valid range.", vbExclamation
-            End If
-            
-            get_range = ""
-            Exit Function
-        End If
-        
+    
         get_range = dialogue_output
-        Exit Function
+    
     End If
 End Function
+
+Public Function validate_dataset(r, Optional ByVal force_contiguous As Boolean = True, _
+                                                    Optional ByVal accept_file_name As Boolean = False) As String
+    ' Check whether the input is a file. Because of various complications (OneDrive, Mac sandbox, etc...),
+    ' we do this in the least restrictive way possible - by checking whether the file has a .csv or .xlsx
+    ' or .xls extension (those are the ones accepted by the add-in)
+    If accept_file_name And (Right(r, 4) = ".csv" Or _
+                                Right(r, 4) = ".xls" Or _
+                                    Right(r, 5) = ".xlsx") Then
+        r = "File: " & r
+        validate_dataset = "True"
+        Exit Function
+    End If
+    
+    ' Check whether it's contiguous by checking whether there is a comma
+    ' in the range
+    If force_contiguous Then
+        If InStr(1, r, ",") > 0 Then
+            ' MsgBox "Please select a contiguous range.", vbExclamation
+            r = ""
+            validate_dataset = "Please select a contiguous range."
+            Exit Function
+        End If
+    End If
+    
+    ' If this cell reference doesn't contain a sheet, add it
+    If InStr(1, r, "!") = 0 Then
+        r = "[" & ActiveWorkbook.Name & "]" & ActiveWorkbook.ActiveSheet.Name & "!" & r
+    End If
+    
+    ' Ensure this is a valid range
+    If check_valid_range(r) = False Then
+        If accept_file_name Then
+            Dim accepted_files As Variant
+            accepted_files = Array("xls", "xlsx", "csv")
+            If InStr(Right(r, 6), ".") And IsError(Application.Match(Split(r, ".")(1), accepted_files, 0)) Then
+                validate_dataset = "XLKitLearn can only accept xls, xlsx, and csv files."
+            Else
+                validate_dataset = "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet."
+            End If
+        Else
+            validate_dataset = "Please enter a valid range."
+        End If
+        
+        r = ""
+        validate_dataset = "Please enter a valid range."
+        Exit Function
+    End If
+    
+    r = r
+    validate_dataset = "True"
+    Exit Function
+
+End Function
+
 
 Public Function check_valid_range(r) As Boolean
     ' This function takes a single argument r and checks
     ' whether it is a valid Excel range
     
-    Dim v As Range
+    Dim v As range
     On Error Resume Next
-    Set v = Range(remove_workbook_from_range(r))
+    Set v = range(remove_workbook_from_range(r))
     If err.Number > 0 Then
         check_valid_range = False
     Else
@@ -307,7 +326,7 @@ End Function
 Function run_id(Optional create_new As Boolean = False, Optional extra_seed As Long = 0) As String
     On Error Resume Next
     
-    run_id = Sheets("code_text").Range("B1").Value
+    run_id = Sheets("code_text").range("B1").Value
     
     If create_new Then
         Randomize (DateDiff("s", #1/1/1970#, Now()) + extra_seed)
@@ -316,7 +335,7 @@ Function run_id(Optional create_new As Boolean = False, Optional extra_seed As L
                             Str(Round(Rnd() * 1000000, 0)) & _
                             Str(Round(Rnd() * 1000000, 0)), " ", "")
         
-        Sheets("code_text").Range("B1").Value = run_id
+        Sheets("code_text").range("B1").Value = run_id
     End If
 End Function
 
