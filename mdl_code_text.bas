@@ -27,12 +27,12 @@ Sub load_code()
     ThisWorkbook.Sheets("code_text").Cells.Delete
     
     ' Output the number of lines to the first row
-    ThisWorkbook.Sheets("code_text").Range("A1") = UBound(split_text) + 1
+    ThisWorkbook.Sheets("code_text").range("A1") = UBound(split_text) + 1
         
     ' Output the rest of the code
     Dim i As Integer
     For i = 0 To UBound(split_text)
-        ThisWorkbook.Sheets("code_text").Range("A" & (i + 2)) = split_text(i)
+        ThisWorkbook.Sheets("code_text").range("A" & (i + 2)) = split_text(i)
     Next i
     
     update_names
@@ -90,6 +90,9 @@ Function output_files()
         
         If Export Then
             ' Export the component
+            If FileExists(ExportPath & FileName) Then
+                Kill ExportPath & FileName
+            End If
             Component.Export ExportPath & FileName
         End If
    
