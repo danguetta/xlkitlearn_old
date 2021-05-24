@@ -665,6 +665,10 @@ Private Sub validate_parameters()
         lbl_training_data.BackColor = RED
         lbl_training_data.ControlTipText = DATA_NEEDED
         pred_errors = True
+    ElseIf validate_dataset(lbl_training_data.tag, True, True) <> "" Then
+        lbl_training_data.BackColor = RED
+        lbl_training_data.ControlTipText = validate_dataset(lbl_training_data.tag, True, True)
+        pred_errors = True
     Else
         clear_header_errors
         
@@ -709,9 +713,30 @@ Private Sub validate_parameters()
         
     End If
     
+    ' If we have evaluation and prediction sets, make sure the files are valid
+    If lbl_evaluation_data.tag <> "" Then
+        Dim eval_validate As String
+        eval_validate = validate_dataset(lbl_evaluation_data.tag, True, True)
+        If eval_validate <> "" Then
+            lbl_evaluation_data.BackColor = RED
+            lbl_evaluation_data.ControlTipText = eval_validate
+            pred_errors = True
+        End If
+    End If
+    
+    If lbl_prediction_data.tag <> "" Then
+        Dim pred_validate As String
+        pred_validate = validate_dataset(lbl_prediction_data.tag, True, True)
+        If pred_validate <> "" Then
+            lbl_prediction_data.BackColor = RED
+            lbl_prediction_data.ControlTipText = pred_validate
+            pred_errors = True
+        End If
+    End If
+    
     ' Check that evaluation and prediction data headers match training data
     If Left(lbl_training_data.tag, 5) <> "File:" Then
-        If lbl_evaluation_data.tag <> "" And Left(lbl_evaluation_data.tag, 5) <> "File:" Then
+        If lbl_evaluation_data.tag <> "" And lbl_evaluation_data.BackColor <> RED And Left(lbl_evaluation_data.tag, 5) <> "File:" Then
             Dim eval_range As Range
             Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))
             c = 0
@@ -727,7 +752,7 @@ Private Sub validate_parameters()
             End If
         End If
         
-        If lbl_prediction_data.tag <> "" And Left(lbl_prediction_data.tag, 5) <> "File:" Then
+        If lbl_prediction_data.tag <> "" And lbl_prediction_data.BackColor <> RED And Left(lbl_prediction_data.tag, 5) <> "File:" Then
             Dim pred_range As Range
             Set pred_range = Range(remove_workbook_from_range(lbl_prediction_data.tag))
             c = 0

@@ -39,7 +39,7 @@ Public Sub Workbook_Open()
         #End If
         
         ' Ensure the interpreter exists
-        If Not FileExists(GetConfig("INTERPRETER_MAC", "")) Then
+        If Not FileOrFolderExistsOnMac(ParentFolder(GetConfig("INTERPRETER_MAC", ""))) Then
             Dim msg_output
             msg_output = MsgBox("It looks like you are trying to run the XLKitLearn Excel file without first installing the python interpreter " & _
                     "required. Please go to guetta.org/xlkitlearn and follow the installation instructions there to the letter, " & _

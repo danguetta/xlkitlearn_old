@@ -90,6 +90,10 @@ Function output_files()
         
         If Export Then
             ' Export the component
+            If FileExists(ExportPath & FileName) Then
+                Kill ExportPath & FileName
+            End If
+            
             Component.Export ExportPath & FileName
         End If
    

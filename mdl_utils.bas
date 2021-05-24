@@ -8,16 +8,16 @@ Public Sub do_nothing()
 End Sub
 
 Public Sub remove_shortcuts()
-    Application.OnKey "^+0", "do_nothing"
-    Application.OnKey "^+1", "do_nothing"
-    Application.OnKey "^+2", "do_nothing"
-    Application.OnKey "^+3", "do_nothing"
-    Application.OnKey "^+4", "do_nothing"
-    Application.OnKey "^+5", "do_nothing"
-    Application.OnKey "^+6", "do_nothing"
-    Application.OnKey "^+7", "do_nothing"
-    Application.OnKey "^+8", "do_nothing"
-    Application.OnKey "^+9", "do_nothing"
+    Application.OnKey "^+%0", "do_nothing"
+    Application.OnKey "^+%1", "do_nothing"
+    Application.OnKey "^+%2", "do_nothing"
+    Application.OnKey "^+%3", "do_nothing"
+    Application.OnKey "^+%4", "do_nothing"
+    Application.OnKey "^+%5", "do_nothing"
+    Application.OnKey "^+%6", "do_nothing"
+    Application.OnKey "^+%7", "do_nothing"
+    Application.OnKey "^+%8", "do_nothing"
+    Application.OnKey "^+%9", "do_nothing"
 End Sub
 
 Public Sub resolve_workbook_path()
@@ -211,52 +211,67 @@ Public Function get_range(Optional ByVal caption As String = "Select a range", _
             dialogue_output = trim_ends(dialogue_output)
         End If
         
-        ' Check whether the input is a file. Because of various complications (OneDrive, Mac sandbox, etc...),
-        ' we do this in the least restrictive way possible - by checking whether the file has a .csv or .xlsx
-        ' or .xls extension (those are the ones accepted by the add-in)
-        If accept_file_name And (Right(dialogue_output, 4) = ".csv" Or _
-                                    Right(dialogue_output, 4) = ".xls" Or _
-                                        Right(dialogue_output, 5) = ".xlsx") Then
-            get_range = "File: " & dialogue_output
-            Exit Function
-        End If
+        Dim dataset_error As String
+        dataset_error = validate_dataset(dialogue_output, force_contiguous, accept_file_name)
         
-        ' Check whether it's contiguous by checking whether there is a comma
-        ' in the range
-        If force_contiguous Then
-            If InStr(1, dialogue_output, ",") > 0 Then
-                MsgBox "Please select a contiguous range.", vbExclamation
-                get_range = ""
-                Exit Function
-            End If
-        End If
-        
-        ' If this cell reference doesn't contain a sheet, add it
-        If InStr(1, dialogue_output, "!") = 0 Then
-            dialogue_output = "[" & ActiveWorkbook.Name & "]" & ActiveWorkbook.ActiveSheet.Name & "!" & dialogue_output
-        End If
-        
-        ' Ensure this is a valid range
-        If check_valid_range(dialogue_output) = False Then
-            If accept_file_name Then
-                Dim accepted_files As Variant
-                accepted_files = Array("xls", "xlsx", "csv")
-                If InStr(Right(dialogue_output, 6), ".") And IsError(Application.Match(Split(dialogue_output, ".")(1), accepted_files, 0)) Then
-                    MsgBox "XLKitLearn can only accept xls, xlsx, and csv files.", vbExclamation
-                Else
-                    MsgBox "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet.", vbExclamation
-                End If
-            Else
-                MsgBox "Please enter a valid range.", vbExclamation
-            End If
-            
-            get_range = ""
-            Exit Function
+        If dataset_error <> "" Then
+            MsgBox dataset_error, vbExclamation
         End If
         
         get_range = dialogue_output
+    End If
+End Function
+
+Public Function validate_dataset(ByRef r, Optional ByVal force_contiguous As Boolean = True, _
+                                                    Optional ByVal accept_file_name As Boolean = False) As String
+    ' Check whether the input is a file. Because of various complications (OneDrive, Mac sandbox, etc...),
+    ' we do this in the least restrictive way possible - by checking whether the file has a .csv or .xlsx
+    ' or .xls extension (those are the ones accepted by the add-in)
+    If accept_file_name And (Right(r, 4) = ".csv" Or _
+                                Right(r, 4) = ".xls" Or _
+                                    Right(r, 5) = ".xlsx") Then
+        r = "File: " & r
+        validate_dataset = ""
         Exit Function
     End If
+    
+    ' Check whether it's contiguous by checking whether there is a comma
+    ' in the range
+    If force_contiguous Then
+        If InStr(1, r, ",") > 0 Then
+            ' MsgBox "Please select a contiguous range.", vbExclamation
+            r = ""
+            validate_dataset = "Please select a contiguous range."
+            Exit Function
+        End If
+    End If
+    
+    ' If this cell reference doesn't contain a sheet, add it
+    If InStr(1, r, "!") = 0 Then
+        r = "[" & ActiveWorkbook.Name & "]" & ActiveWorkbook.ActiveSheet.Name & "!" & r
+    End If
+    
+    ' Ensure this is a valid range
+    If check_valid_range(r) = False Then
+        If accept_file_name Then
+            Dim accepted_files As Variant
+            accepted_files = Array("xls", "xlsx", "csv")
+            If InStr(Right(r, 6), ".") And IsError(Application.Match(Split(r, ".")(1), accepted_files, 0)) Then
+                validate_dataset = "XLKitLearn can only accept xls, xlsx, and csv files."
+            Else
+                validate_dataset = "Please enter a valid range. You can also enter a file name, provided it exists in the same directory as this spreadsheet."
+            End If
+        Else
+            validate_dataset = "Please enter a valid range."
+        End If
+        
+        r = ""
+        validate_dataset = "Please enter a valid range."
+        Exit Function
+    End If
+    
+    r = r
+    validate_dataset = ""
 End Function
 
 Public Function check_valid_range(r) As Boolean
