@@ -22,8 +22,6 @@ Public text_errors As Boolean
 ' Also remove the path from the code_text
 Public PROD_VERSION As Boolean
 
-Public Const AUTH_KEY = "eMSpn8v3Dc5GoQT7g76NDWfYGg4attWJKg6N3kHt1GdfN0iN321CluEez8tW1trIMcSGdj0sEgkNEuO8NtqHyHah5Qdn05hDZCT"
-
 Public Const MISSING = "XxXxXxXxXxXxX"
 
 Public Const MODELS = "{'Linear/logistic regression'|'Lasso penalty'`'K-Nearest Neighbors'|'Neighbors, Weighting'`'Decision tree'|'Tree depth'`'Boosted decision tree'|'Tree depth,Max trees,Learning rate'`'Random forest'|'Tree depth,Number of trees'}"
@@ -73,7 +71,10 @@ Public Sub prepare_for_prod()
 End Sub
 
 Public Sub update_server_version()
-    windows_curl "http://guetta.org/addin/update_version.php?auth_key=" & AUTH_KEY & "&new_version" & ThisWorkbook.Names("version").Value
+    Dim auth_key As String
+    auth_key = InputBox("Please enter auth key")
+    
+    windows_curl "http://guetta.org/addin/update_version.php?auth_key=" & auth_key & "&new_version" & ThisWorkbook.Names("version").Value
 End Sub
 
 Public Sub update_names()
@@ -103,18 +104,18 @@ Public Sub update_conf(Optional resolve_path As Boolean = False)
         new_sheet_name = Sheets.Add()
         Sheets(new_sheet_name).Visible = xlSheetVeryHidden
         Sheets(new_sheet_name).Name = "xlwings.conf"
+        
+        With Sheets("xlwings.conf")
+            .Cells.Clear
+            
+            .Range("A1") = "Interpreter_Win"
+            .Range("B1") = "%LOCALAPPDATA%\XLKitLearn\python.exe"
+            
+            .Range("A2") = "Interpreter_Mac"
+            .Range("B2") = "$HOME/xlkitlearn/bin/python"
+        End With
     End If
-    
-    With Sheets("xlwings.conf")
-        .Cells.Clear
-        
-        .Range("A1") = "Interpreter_Win"
-        .Range("B1") = "%LOCALAPPDATA%\XLKitLearn\python.exe"
-        
-        .Range("A2") = "Interpreter_Mac"
-        .Range("B2") = "$HOME/xlkitlearn/bin/python"
-    End With
-    
+
     If resolve_path = True Then
         resolve_workbook_path
     End If

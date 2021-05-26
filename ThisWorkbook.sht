@@ -14,9 +14,11 @@ Public Sub Workbook_Open()
         'We're deving. Show the code sheet
         PROD_VERSION = False
         Sheet2.Visible = -1
+        Sheet4.Visible = -1
     Else
         PROD_VERSION = True
         Sheet2.Visible = 2
+        Sheet4.Visible = 2
     End If
 
     ' Update the names in this workbook
@@ -39,7 +41,7 @@ Public Sub Workbook_Open()
         #End If
         
         ' Ensure the interpreter exists
-        If Not FileOrFolderExistsOnMac(ParentFolder(GetConfig("INTERPRETER_MAC", ""))) Then
+        If Not FileOrFolderExistsOnMac(ParentFolder(ParentFolder(GetConfig("INTERPRETER_MAC", "")))) Then
             Dim msg_output
             msg_output = MsgBox("It looks like you are trying to run the XLKitLearn Excel file without first installing the python interpreter " & _
                     "required. Please go to guetta.org/xlkitlearn and follow the installation instructions there to the letter, " & _
