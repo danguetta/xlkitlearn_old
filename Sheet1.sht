@@ -33,9 +33,9 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Range)
             ActiveSheet.Range("D14").Select
         ElseIf Target.Address = "$F$18" Then
             ActiveSheet.Range("D9").Select
-        ElseIf Target.Row <= 9 Then
+        ElseIf Target.row <= 9 Then
             ActiveSheet.Range("D9").Select
-        ElseIf Target.Row <= 14 Then
+        ElseIf Target.row <= 14 Then
             ActiveSheet.Range("D14").Select
         Else
             ActiveSheet.Range("F17").Select

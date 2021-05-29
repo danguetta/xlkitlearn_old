@@ -250,16 +250,45 @@ Sub run_addin(f_name As String, this_status_cell As String)
     #If Mac Then
         DoEvents
     #Else
+        Dim udf_setting As String
+        Dim console_setting As String
+        
+        udf_setting = "FALSE"
+        console_setting = "FALSE"
+        
+        If Sheets("Add-in").CheckBoxes("chk_server").Value = 1 Then
+            udf_setting = "TRUE"
+        End If
+        
+        If Sheets("Add-in").CheckBoxes("chk_server").Value = 1 Or Sheets("Add-in").CheckBoxes("chk_foreground").Value = 1 Then
+            console_setting = "TRUE"
+        End If
+        
+    
         With Sheets("xlwings.conf")
-            If Sheets("Add-in").CheckBoxes("chk_server").Value = 1 Then
-                .Range("A1").End(xlDown).Offset(1, 0).Value = "Use UDF Server"
-                .Range("B1").End(xlDown).Offset(1, 0).Value = "TRUE"
-            End If
+            Dim row As Integer
             
-            If Sheets("Add-in").CheckBoxes("chk_server").Value = 1 Or Sheets("Add-in").CheckBoxes("chk_foreground").Value = 1 Then
-                .Range("A1").End(xlDown).Offset(1, 0).Value = "Show Console"
-                .Range("B1").End(xlDown).Offset(1, 0).Value = "TRUE"
-            End If
+            For row = 1 To 10
+                If .Range("A" & row).Value = "" Then
+                    .Range("A" & row) = "Use UDF Server"
+                End If
+            
+                If .Range("A" & row).Value = "Use UDF Server" Then
+                    .Range("B" & row) = udf_setting
+                    Exit For
+                End If
+            Next row
+                    
+            For row = 1 To 10
+                If .Range("A" & row).Value = "" Then
+                    .Range("A" & row) = "Show Console"
+                End If
+            
+                If .Range("A" & row).Value = "Show Console" Then
+                    .Range("B" & row) = console_setting
+                    Exit For
+                End If
+            Next row
         End With
     #End If
     
