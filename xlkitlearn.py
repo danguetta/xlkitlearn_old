@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.23                 #
+#  Version 10.24                 #
 ##################################
 
 # =====================
@@ -1021,6 +1021,8 @@ class AddinInstance:
         message = message + ' (elapsed time: ' + str(round(time.time() - self._start_time, 2)) + ' seconds)'
         self._model_sheet.range(self._status_cell).value = message
         
+        print(message)
+        
         if self._udf_server and time.time() - self._start_time > 80:
             self._out_err.add_error('The add-in has been running for 80 seconds. Unfortunately, Excel is only able '
                                         'to keep an active Python connection for a limited amount of time. When running '
@@ -1883,11 +1885,13 @@ class Datasets:
                                                     f'{out_col} is equal to {target_val}, but not a single one of the values in that '
                                                      'column is equal to that! Please check...', critical=True)
                     
-                    # Modify evaluation and prediction data if necessary
+                    # Modify evaluation data if necessary (prediction data won't have an outcome column)
                     if self._raw_data.evaluation_data is not None:
+                        if out_col not in  self._raw_data.evaluation_data:
+                            self._out_err.add_error(f'Your manual evaluation set does not contain a column called {out_col}, which you use in your formula.', critical=True)
+                        
                         self._raw_data.evaluation_data[out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.evaluation_data[out_col]]
-                    if self._raw_data.prediction_data is not None:
-                        self._raw_data.prediction_data[out_col] = [1 if is_target_val(i) else 0 for i in self._raw_data.prediction_data[out_col]]
+                    
                     
                     
                 # Create an internal version of this formula for processing purposes that
