@@ -4186,6 +4186,7 @@ class PredictiveCode:
                 if (self._model_name == LINEAR_REGRESSION) and (self._binary):
                     o +=            'param_grid = {"C":[' + ','.join([f'1/{i}' for i in self._params.alpha.vals]) +']}'+'\n'
                 else:
+                    self._import_statements.append('import sklearn.model_selection as sk_ms')
                     o +=            'param_grid = {' + ',\n              '.join([f'"{i}":{self._params[i].vals}'                                                           for i in self._tuning_params]) + '}'    +'\n'
             
             o +=                    ''                                                                                 +'\n'
