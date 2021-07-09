@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Private Sub Worksheet_Activate()
-    If PROD_VERSION = True Then
+    If DEBUG_VERSION = False Then
         ThisWorkbook.Sheets("code_text").Visible = 2
     End If
 End Sub

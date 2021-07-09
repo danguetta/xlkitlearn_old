@@ -90,6 +90,7 @@ Private Sub CommandButton1_Click()
     frm_formula.Show False
 End Sub
 
+
 Private Sub lbl_evaluation_data_Click()
     Me.Hide
     
@@ -735,7 +736,7 @@ Private Sub validate_parameters()
     End If
     
     ' Check that evaluation and prediction data headers match training data
-    If Left(lbl_training_data.tag, 5) <> "File:" Then
+    If Left(lbl_training_data.tag, 5) <> "File:" And Not too_many_cols Then
         If lbl_evaluation_data.tag <> "" And lbl_evaluation_data.BackColor <> RED And Left(lbl_evaluation_data.tag, 5) <> "File:" Then
             Dim eval_range As Range
             Set eval_range = Range(remove_workbook_from_range(lbl_evaluation_data.tag))

@@ -135,7 +135,7 @@ End Sub
 
 Sub run_addin(f_name As String, this_status_cell As String)
     ' Load code if it's here and if we're not in production
-    If PROD_VERSION = False Then
+    If DEBUG_VERSION = True Then
         On Error Resume Next
         load_code
         resolve_workbook_path

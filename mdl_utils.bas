@@ -43,7 +43,7 @@ Public Sub resolve_workbook_path()
         GoTo check_for_quotes
     End If
         
-    If PROD_VERSION = True Then
+    If DEBUG_VERSION = False Then
         On Error GoTo cant_resolve
     End If
     
@@ -136,7 +136,7 @@ cant_resolve:
                 "OneDrive folder - it's not in any of the usual places. Please move this file to a location that isn't synced " & _
                 "to OneDrive and try again", vbCritical
     
-        If PROD_VERSION = True Then
+        If DEBUG_VERSION = False Then
             ThisWorkbook.Close
         End If
     End If

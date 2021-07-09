@@ -12,11 +12,11 @@ Option Explicit
 Public Sub Workbook_Open()
     If InStr(1, ThisWorkbook.Name, "DEBUG") > 0 Then
         'We're deving. Show the code sheet
-        PROD_VERSION = False
+        DEBUG_VERSION = True
         Sheet2.Visible = -1
         Sheet4.Visible = -1
     Else
-        PROD_VERSION = True
+        DEBUG_VERSION = False
         Sheet2.Visible = 2
         Sheet4.Visible = 2
     End If
@@ -113,7 +113,7 @@ after_version_check:
     
     Exit Sub
 close_workbook:
-    If PROD_VERSION = True Then
+    If DEBUG_VERSION = False Then
         ThisWorkbook.Close False
     End If
 End Sub

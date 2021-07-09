@@ -20,13 +20,15 @@ Public text_errors As Boolean
 '          in xlwings logs to the server)
 ' Also deeply hide the sheets
 ' Also remove the path from the code_text
-Public PROD_VERSION As Boolean
+Public DEBUG_VERSION As Boolean
 
 Public Const MISSING = "XxXxXxXxXxXxX"
 
 Public Const MODELS = "{'Linear/logistic regression'|'Lasso penalty'`'K-Nearest Neighbors'|'Neighbors, Weighting'`'Decision tree'|'Tree depth'`'Boosted decision tree'|'Tree depth,Max trees,Learning rate'`'Random forest'|'Tree depth,Number of trees'}"
 Public Const BLANK_SETTINGS = "{'model'|'Linear/logistic regression'`'formula'|''`'param1'|''`'param2'|''`'param3'|''`'training_data'|''`'K'|''`'ts_data'|'False'`'evaluation_perc'|''`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
 Public Const BLANK_TEXT_SETTINGS = "{'source_data'|''`'max_df'|''`'min_df'|''`'max_features'|'500'`'stop_words'|'True'`'tf_idf'|'False'`'lda_topics'|''`'seed'|'123'`'eval_perc'|'0'`'bigrams'|'False'`'stem'|'False'`'output_code'|'True'`'sparse_output'|'False'`'max_lda_iter'|''}"
+
+Public Const SAMPLE_SETTINGS = "{'model'|'Random forest'`'formula'|'median_property_value ~ crime_per_capita + prop_zoned_over_25k + prop_non_retail_acres + bounds_river + nox_concentration + av_rooms_per_dwelling + prop_owner_occupied_pre_1940 + dist_to_employment_ctr + highway_accessibility + tax_rate + pupil_teacher_ratio'`'param1'|'3 & 4 & 5 & 6'`'param2'|'25'`'param3'|''`'training_data'|'[xlkitlearn.xlsm]boston_housing!$A$1:$L$507'`'K'|'5'`'ts_data'|'False'`'evaluation_perc'|''`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
 
 Public Const CURRENT_SETTINGS = "'Add-in'!D9"
 Public Const CURRENT_TEXT_SETTINGS = "'Add-in'!D14"
@@ -42,7 +44,7 @@ Public Const RED = 12632319
 Public Const GRAPH_LINE_PER_INCH = 3
 
 Public Sub prepare_for_prod()
-    ThisWorkbook.Sheets("Add-in").Range("D9").Value = "{'model'|'Random forest'`'formula'|'median_property_value ~ crime_per_capita + prop_zoned_over_25k + prop_non_retail_acres + bounds_river + nox_concentration + av_rooms_per_dwelling + prop_owner_occupied_pre_1940 + dist_to_employment_ctr + highway_accessibility + tax_rate + pupil_teacher_ratio'`'param1'|'3 & 4 & 5 & 6'`'param2'|'25'`'param3'|''`'training_data'|'[xlkitlearn.xlsm]boston_housing!$A$1:$L$507'`'K'|'5'`'ts_data'|'False'`'evaluation_perc'|'30'`'evaluation_data'|''`'prediction_data'|''`'seed'|'123'`'output_model'|'True'`'output_evaluation_details'|'True'`'output_code'|'True'}"
+    ThisWorkbook.Sheets("Add-in").Range("D9").Value = SAMPLE_SETTINGS
     ThisWorkbook.Sheets("Add-in").Range("D14").Value = ""
     ThisWorkbook.Sheets("Add-in").Range("F17").Value = ""
     ThisWorkbook.Sheets("code_text").Range("D1").Value = ""
