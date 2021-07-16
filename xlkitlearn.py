@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.25                 #
+#  Version 10.27                 #
 ##################################
 
 # =====================
@@ -1084,8 +1084,8 @@ class AddinInstance:
             translator   = lambda x : float(x)
         elif spec.kind == 'b':
             english_key = 'boolean (True or False value)'
-            validations  = [lambda x : x in ['True', 'False']]
-            translator   = lambda x : {'True':True, 'False':False}[x]
+            validations  = [lambda x : x in ['True', 'False', 'Verdadero', 'Falso']]
+            translator   = lambda x : {'True':True, 'False':False, 'Verdadero':True, 'Falso':False}[x]
         elif spec.kind == 's':
             english_key = 'string'
             validations = []
@@ -3655,16 +3655,16 @@ class PredictiveCode:
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    output_data["training_data"] = ('                                              +'\n'
                 dot_translato  +=  '                {"y" : np.array(datasets["training_data"][y_col].transpose()),'    +'\n'
-                dot_translato  +=  '                 "X" : np.array(datasets["training_data"][x_cols])})'              +'\n'
+                dot_translato  +=  '                 "X" : datasets["training_data"][x_cols]})'                        +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "evaluation_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["evaluation_data"] = ('                                        +'\n'
                 dot_translato  +=  '                {"y" : np.array(datasets["evaluation_data"][y_col].transpose()),'  +'\n'
-                dot_translato  +=  '                 "X" : np.array(datasets["evaluation_data"][x_cols])})'            +'\n'
+                dot_translato  +=  '                 "X" : datasets["evaluation_data"][x_cols]})'                      +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "prediction_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["prediction_data"] = ('                                        +'\n'
-                dot_translato  +=  '                {"X" : np.array(datasets["prediction_data"][x_cols])})'            +'\n'
+                dot_translato  +=  '                {"X" : datasets["prediction_data"][x_cols]})'                      +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    # If the formula is y ~ . -1, we do not want an intercept, otherwise we do'    +'\n'
                 dot_translato  +=  '    output_data["intercept"] = (formula[-2:] != "-1")'                             +'\n'
@@ -3920,7 +3920,9 @@ class PredictiveCode:
                     o  +=          ''                                                                                  +'\n'
                     o  +=          'formula = y_col + "~" + formula.split("~")[1]'                                     +'\n'
                     o  +=          ''                                                                                  +'\n'
-                
+                else:
+                    o  +=         f'formula = "{self._formula[0]}"'                                                    +'\n'
+                    
                 o +=              f'final_model = sm.{fun}(formula=formula,'                                           +'\n'
                 o +=               '                             data=datasets["training_data"])'                      +'\n'
             o +=                   ''                                                                                  +'\n'
@@ -4186,7 +4188,6 @@ class PredictiveCode:
                 if (self._model_name == LINEAR_REGRESSION) and (self._binary):
                     o +=            'param_grid = {"C":[' + ','.join([f'1/{i}' for i in self._params.alpha.vals]) +']}'+'\n'
                 else:
-                    self._import_statements.append('import sklearn.model_selection as sk_ms')
                     o +=            'param_grid = {' + ',\n              '.join([f'"{i}":{self._params[i].vals}'                                                           for i in self._tuning_params]) + '}'    +'\n'
             
             o +=                    ''                                                                                 +'\n'
