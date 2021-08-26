@@ -1,0 +1,19 @@
+name: Extract VBA
+on: [push]
+jobs:
+  ExtractVBA:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Starting"
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - run: pip install oletools
+      - run: python ./.github/workflows/extract_vba.py
+      - run: echo "VBA Extracted. Now creating a new commit"
+      - name: Commit report
+        run: |
+          git config --global user.name 'VBA Robot'
+          git config --global user.email 'VBA Robot'
+          git add .
+          git commit -am "VBA - ${{ github.event.head_commit.message }}" --allow-empty
+          git push
