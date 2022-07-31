@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2020       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.27                 #
+#  Version 10.28                 #
 ##################################
 
 # =====================
@@ -3655,16 +3655,16 @@ class PredictiveCode:
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    output_data["training_data"] = ('                                              +'\n'
                 dot_translato  +=  '                {"y" : np.array(datasets["training_data"][y_col].transpose()),'    +'\n'
-                dot_translato  +=  '                 "X" : datasets["training_data"][x_cols]})'                        +'\n'
+                dot_translato  +=  '                 "X" : np.array(datasets["training_data"][x_cols])})'              +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "evaluation_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["evaluation_data"] = ('                                        +'\n'
                 dot_translato  +=  '                {"y" : np.array(datasets["evaluation_data"][y_col].transpose()),'  +'\n'
-                dot_translato  +=  '                 "X" : datasets["evaluation_data"][x_cols]})'                      +'\n'
+                dot_translato  +=  '                 "X" : np.array(datasets["evaluation_data"][x_cols])})'            +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    if "prediction_data" in datasets:'                                             +'\n'
                 dot_translato  +=  '        output_data["prediction_data"] = ('                                        +'\n'
-                dot_translato  +=  '                {"X" : datasets["prediction_data"][x_cols]})'                      +'\n'
+                dot_translato  +=  '                {"X" : np.array(datasets["prediction_data"][x_cols])})'            +'\n'
                 dot_translato  +=  ''                                                                                  +'\n'
                 dot_translato  +=  '    # If the formula is y ~ . -1, we do not want an intercept, otherwise we do'    +'\n'
                 dot_translato  +=  '    output_data["intercept"] = (formula[-2:] != "-1")'                             +'\n'
