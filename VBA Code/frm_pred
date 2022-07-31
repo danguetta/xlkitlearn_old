@@ -71,6 +71,19 @@ Private Sub cmd_save_Click()
     Unload Me
 End Sub
 
+Private Sub cmd_save_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    ' Set output sheet name
+    If Button = 2 Then
+        Sheets("xlwings.conf").Range("J1").Value = InputBox("Please enter a sheet name for the output.", "Choose a sheet name")
+        If Left(Trim(Sheets("xlwings.conf").Range("J1").Value), 1) = "=" Then
+            MsgBox "Please don't pick a sheet name that starts with an equal sign.", vbExclamation
+            Sheets("xlwings.conf").Range("J1").Value = ""
+        Else:
+            cmd_save_Click
+        End If
+    End If
+End Sub
+
 Private Sub CommandButton1_Click()
     frm_formula.Show False
 End Sub

@@ -230,6 +230,16 @@ Sub run_addin(f_name As String, this_status_cell As String)
     ActiveWindow.DisplayGridlines = False
     ThisWorkbook.Sheets.Item(new_sheet_name).Visible = xlSheetHidden
     
+    ' Rename the sheet if requested by the user
+    On Error GoTo after_rename
+    If Trim(Sheets("xlwings.conf").Range("J1").Value) <> "" Then
+        ThisWorkbook.Sheets.Item(new_sheet_name).Name = Trim(Sheets("xlwings.conf").Range("J1").Value)
+        new_sheet_name = Trim(Sheets("xlwings.conf").Range("J1").Value)
+    End If
+after_rename:
+    Sheets("xlwings.conf").Range("J1").Value = ""
+    On Error GoTo 0
+    
     On Error Resume Next
     ThisWorkbook.Names.Item("sheet_in_progress").Delete
     On Error GoTo 0
