@@ -130,6 +130,8 @@ Private Sub lbl_prediction_data_Click()
 End Sub
 
 Private Sub lbl_training_data_Click()
+    blank_cols = False
+    
     Me.Hide
     lbl_training_data.tag = get_range("Select a range for the training data." & vbCrLf & vbCrLf & _
                                         "The first row of the table you select should contain variable names." & _
@@ -147,6 +149,10 @@ Private Sub lbl_training_data_Click()
     
     Me.Show False
     validate_parameters
+    
+    If blank_cols = True Then
+        MsgBox "You've selected a range with blank columns - perhaps you mistakenly went all the way to the right of the sheet instead of *just* selecting the data range?", vbExclamation
+    End If
 End Sub
 
 Private Sub lbl_training_errors_Click()
@@ -453,6 +459,8 @@ Public Sub update_vars()
     If data_range(1, 1) = "ROW" And data_range(1, 2) = "COLUMN" And data_range(1, 3) = "VALUE" Then
         ' We have a sparse dataset - column names are blank
     ElseIf data_range.Columns.count < 50 Then
+        too_many_cols = False
+        
         For i = 1 To data_range.Columns.count
             vars.Add Trim(data_range(1, i))
         Next i
@@ -480,6 +488,13 @@ Public Sub update_vars()
             End If
         Next i
     Else
+        ' Check whether any of the columns are empty
+        For i = 1 To data_range.Columns.count
+            If Trim(data_range(1, i)) = "" Then
+                blank_cols = True
+            End If
+        Next i
+        
         too_many_cols = True
     End If
     
@@ -547,7 +562,7 @@ Private Sub validate_parameters()
     lbl_training_data.Width = FORMULA_WIDTH_LARGE
     lbl_training_errors.Visible = False
     
-    ' Determine the number of parameters in th emodel in question
+    ' Determine the number of parameters in the emodel in question
     Dim n_params_required As Integer
     n_params_required = UBound(Split(dict_utils(MODELS, cmb_model.Value), ",")) + 1
     

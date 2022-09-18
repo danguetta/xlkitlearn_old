@@ -6,6 +6,7 @@ Public mac_file As Boolean
 Public excel_file As Boolean
 Public too_many_cols As Boolean
 Public invalid_file As Boolean
+Public blank_cols As Boolean
 
 ' Create a colleciton to store any invalid headers
 Public header_errors As New Collection
