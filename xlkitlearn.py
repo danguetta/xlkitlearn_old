@@ -1,9 +1,9 @@
 ##################################
 #  XLKitLearn                    #
-#  (C) Daniel Guetta, 2020       #
+#  (C) Daniel Guetta, 2022       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.28                 #
+#  Version 10.29                 #
 ##################################
 
 # =====================
@@ -3002,7 +3002,7 @@ def run_addin(function_name, sheet_name, udf_server, workbook=None):
         
         else:
             out_err.add_error("What, what?! How on earth did you get here - please contact "
-                                "xlkitlearn@guetta.com to report this has happened!", critical=True)
+                                "the person who provided you the add-in to report this has happened!", critical=True)
                                 
     except AddinError:
         # If we get an AddinError, we've already handled it
@@ -3011,7 +3011,7 @@ def run_addin(function_name, sheet_name, udf_server, workbook=None):
     except BaseException as e:
         if workbook is None:
             try:
-                out_err.add_error('An unidentified error has occurred. Please email xlkitlearn@guetta.com '
+                out_err.add_error('An unidentified error has occurred. Please email the person who provided you the add-in '
                                     'with the full text below to report it\n\n Full'
                                     'error:\n\n' + traceback.format_exc(), critical=True)
             except AddinError:
