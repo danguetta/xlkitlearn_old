@@ -3,7 +3,7 @@
 #  (C) Daniel Guetta, 2022       #
 #      daniel@guetta.com         #
 #      guetta@gsb.columbia.edu   #
-#  Version 10.29                 #
+#  Version 11.01                 #
 ##################################
 
 # =====================
@@ -263,7 +263,6 @@ EXCEL_INTERFACE = D(     interface_sheet = 'Add-in',
                             run_id_sheet = 'code_text',
                              run_id_cell = 'B1',
                                 pid_cell = 'C1',
-                               path_cell = 'D1',
                      graph_line_per_inch = 3,
                             output_width = 116,
                        output_code_width = 82,
@@ -598,7 +597,7 @@ class ExcelOutput:
         '''
         
         if len(df) > EXCEL_INTERFACE.max_table_rows:
-            file_path = self._wb.sheets('code_text').range(EXCEL_INTERFACE.path_cell).value
+            file_path = os.path.abspath(os.path.join(self._wb.fullname,os.path.pardir))
             delim = '/' if '/' in file_path else '\\'
             file_path = file_path + delim
             
@@ -1565,7 +1564,7 @@ class Datasets:
                 return
         else:
             try:
-                file_path = self._excel_connector.wb.sheets('code_text').range(EXCEL_INTERFACE.path_cell).value
+                file_path = os.path.abspath(os.path.join(self._excel_connector.wb.fullname,os.path.pardir))
                 delim = '/' if '/' in file_path else '\\'
                 file_path = file_path + delim
                 
@@ -4354,7 +4353,7 @@ def run_text_addin(out_err, sheet, excel_connector, udf_server):
     out_err.add_error_category('Data reading')
     
     try:
-        excel_path = excel_connector.wb.sheets('code_text').range(EXCEL_INTERFACE.path_cell).value
+        excel_path = os.path.abspath(os.path.join(excel_connector.wb.fullname,os.path.pardir))
         file_path = excel_path
         delim = '/' if '/' in file_path else '\\'
         file_path = file_path + delim
