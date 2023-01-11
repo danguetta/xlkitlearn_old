@@ -39,7 +39,7 @@ Public Const STATUS_CELL = "F7"
 Public Const STATUS_CELL_TEXT = "F12"
 
 Public Const WHITE = -2147483643
-Public Const RED = 12632319
+Public Const red = 12632319
 
 Public Const GRAPH_LINE_PER_INCH = 3
 
@@ -51,7 +51,7 @@ Public Sub prepare_for_prod()
     
     Dim delete_sheets As New Collection
     Dim i As Integer
-    For i = 1 To ThisWorkbook.Sheets.count
+    For i = 1 To ThisWorkbook.Sheets.Count
         If (ThisWorkbook.Sheets(i).Name <> "Add-in") _
                 And (ThisWorkbook.Sheets(i).Name <> "xlwings.conf") _
                 And (ThisWorkbook.Sheets(i).Name <> "code_text") _
@@ -60,7 +60,7 @@ Public Sub prepare_for_prod()
         End If
     Next i
     Application.DisplayAlerts = False
-    For i = 1 To delete_sheets.count
+    For i = 1 To delete_sheets.Count
         ThisWorkbook.Sheets(delete_sheets.Item(i)).Delete
     Next i
     Application.DisplayAlerts = True
@@ -85,7 +85,7 @@ Public Sub update_names()
     ' Delete all names
     Dim i As Integer
     i = 0
-    While (ThisWorkbook.Names.count > 0) And (i < 50)
+    While (ThisWorkbook.Names.Count > 0) And (i < 50)
         ThisWorkbook.Names.Item(1).Delete
         i = i + 1
     Wend
@@ -101,7 +101,7 @@ End Sub
 Public Sub update_conf(Optional resolve_path As Boolean = False)
     On Error GoTo update_conf_error
     
-    If SheetExists("xlwings.conf") = False Then
+    If SheetExists(ThisWorkbook, "xlwings.conf") = False Then
         Dim new_sheet_name As String
         new_sheet_name = Sheets.Add()
         Sheets(new_sheet_name).Visible = xlSheetVeryHidden

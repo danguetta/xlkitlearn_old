@@ -409,7 +409,7 @@ Public Function variable_valid(Item, Optional allow_substring As Boolean = False
     
     Item = Trim(Item)
     
-    For i = 1 To vars.count
+    For i = 1 To vars.Count
         If allow_substring Then
             cur_item = Mid(vars.Item(i), 1, Len(Item))
         Else
@@ -482,19 +482,19 @@ Public Function validate_formula(formula_text As String) As String
             formula_parts(0) = Trim(Split(formula_parts(0), "=")(0))
         End If
         
-        If vars.count > 0 And variable_valid(formula_parts(0)) = "" Then
+        If vars.Count > 0 And variable_valid(formula_parts(0)) = "" Then
             invalid_terms.Add (Trim(formula_parts(0)))
         End If
         
         ' If we've checked the numerical status of our columns, make sure the output
         ' (y) column is numeric. Also keep track of whether the rest of the columns are
         ' numeric so we can check whether a dot formula is appropriate later
-        If var_types.count > 0 Then
+        If var_types.Count > 0 Then
             Dim all_numeric As Boolean
             all_numeric = True
         
             Dim w As Integer
-            For w = 1 To var_types.count
+            For w = 1 To var_types.Count
                 If (var_types.Item(w) <> "numeric") And (Not (vars.Item(w) = formula_parts(0) And equals_sign)) Then
                     all_numeric = False
                 End If
@@ -550,19 +550,19 @@ Public Function validate_formula(formula_text As String) As String
                     Exit Function
                 End If
                 
-                If vars.count > 0 And variable_valid(this_term(k)) = "" Then invalid_terms.Add (Trim(this_term(k)))
+                If vars.Count > 0 And variable_valid(this_term(k)) = "" Then invalid_terms.Add (Trim(this_term(k)))
             Next k
         
         Next j
         
     Next i
      
-    If invalid_terms.count > 0 Then
+    If invalid_terms.Count > 0 Then
         validate_formula = "It looks like at least one term in your formula(s) does not exist in your data. " & _
                     "The problematic terms were "
-        For i = 1 To invalid_terms.count
+        For i = 1 To invalid_terms.Count
             validate_formula = validate_formula & invalid_terms.Item(i)
-            If i <> invalid_terms.count Then validate_formula = validate_formula & ", "
+            If i <> invalid_terms.Count Then validate_formula = validate_formula & ", "
         Next i
         validate_formula = validate_formula & ". Please remember these variable names are case sensitive."
     End If

@@ -41,7 +41,7 @@ End Sub
 
 Function output_files()
     Dim Export As Boolean
-    Dim Source As Excel.Workbook
+    Dim source As Excel.Workbook
     Dim SourceWorkbook As String
     Dim ExportPath As String
     Dim FileName As String
@@ -50,10 +50,10 @@ Function output_files()
 
     ' This workbook must be open in Excel.
     SourceWorkbook = ActiveWorkbook.Name
-    Set Source = Application.Workbooks(SourceWorkbook)
+    Set source = Application.Workbooks(SourceWorkbook)
     
     ' Must update security settings to trust access to the VBA project object model
-    If Source.VBProject.Protection = 1 Then
+    If source.VBProject.Protection = 1 Then
         MsgBox "The VBA in this workbook is protected," & _
             "not possible to export the code"
         Exit Function
@@ -65,7 +65,7 @@ Function output_files()
         ExportPath = ThisWorkbook.Path & "\"
     #End If
     
-    For Each Component In Source.VBProject.VBComponents
+    For Each Component In source.VBProject.VBComponents
 
         Export = True
         FileName = Component.Name

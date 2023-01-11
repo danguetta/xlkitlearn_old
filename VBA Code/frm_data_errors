@@ -3,7 +3,7 @@ Private Sub UserForm_Initialize()
     lst_errors.ColumnWidths = "50,15,170,15,500"
     
     Dim i As Integer
-    For i = 1 To header_errors.count()
+    For i = 1 To header_errors.Count()
         lst_errors.AddItem
         
         lst_errors.List(i - 1, 0) = Split(header_errors.Item(i), "`")(0)

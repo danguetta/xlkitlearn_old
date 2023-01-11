@@ -59,7 +59,7 @@ unknown_err:
 after_err:
     
     If error_message <> "" Then
-        txt_formula_edit.BackColor = RED
+        txt_formula_edit.BackColor = red
         txt_error.Text = error_message
     Else
         txt_formula_edit.BackColor = WHITE
@@ -92,7 +92,7 @@ Private Sub UserForm_Initialize()
     error_message = validate_formula(txt_formula_edit.Text)
     
     If error_message <> "" Then
-        txt_formula_edit.BackColor = RED
+        txt_formula_edit.BackColor = red
         txt_error.Text = error_message
     Else
         txt_formula_edit.BackColor = WHITE
@@ -147,7 +147,7 @@ Private Sub populate_list(Optional stub As String = "")
         lst_variables.AddItem "the formula."
     Else
         Dim i As Integer
-        For i = 1 To vars.count
+        For i = 1 To vars.Count
             If stub = Mid(vars.Item(i), 1, Len(stub)) Then
                 lst_variables.AddItem vars.Item(i)
             End If
